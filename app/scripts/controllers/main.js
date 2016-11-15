@@ -74,7 +74,7 @@ angular.module('angularGanttDemoApp')
         // angular-gantt options
         $scope.options = {
             mode: 'custom',
-            scale: 'day',
+            scale: 'hour',
             sortMode: undefined,
             sideMode: 'TreeTable',
             daily: false,
@@ -101,68 +101,21 @@ angular.module('angularGanttDemoApp')
             },
             autoExpand: 'none',
             taskOutOfRange: 'truncate',
-            fromDate: moment(null),
-            toDate: undefined,
+            fromDate: moment(new Date(2016, 12, 15, 0, 0, 0)),
+            toDate: moment(new Date(2016, 12, 16, 12, 0, 0)),
             rowContent: '<i class="fa fa-align-justify"></i> {{row.model.name}}',
             taskContent : '<i class="fa fa-tasks"></i> {{task.model.name}}',
             allowSideResizing: true,
             labelsEnabled: true,
             currentDate: 'line',
-            currentDateValue: new Date(2013, 9, 23, 11, 20, 0),
-            draw: false,
+            currentDateValue: moment(new Date(2016, 12, 15, 11, 20, 0)),
+            draw: true,
             readOnly: false,
             groupDisplayMode: 'group',
             filterTask: '',
             filterRow: '',
-            timeFrames: {
-                'day': {
-                    start: moment('8:00', 'HH:mm'),
-                    end: moment('20:00', 'HH:mm'),
-                    color: '#ACFFA3',
-                    working: true,
-                    default: true
-                },
-                'noon': {
-                    start: moment('12:00', 'HH:mm'),
-                    end: moment('13:30', 'HH:mm'),
-                    working: false,
-                    default: true
-                },
-                'closed': {
-                    working: false,
-                    default: true
-                },
-                'weekend': {
-                    working: false
-                },
-                'holiday': {
-                    working: false,
-                    color: 'red',
-                    classes: ['gantt-timeframe-holiday']
-                }
-            },
-            dateFrames: {
-                'weekend': {
-                    evaluator: function(date) {
-                        return date.isoWeekday() === 6 || date.isoWeekday() === 7;
-                    },
-                    targets: ['weekend']
-                },
-                '11-november': {
-                    evaluator: function(date) {
-                        return date.month() === 10 && date.date() === 11;
-                    },
-                    targets: ['holiday']
-                }
-            },
-            timeFramesWorkingMode: 'hidden',
-            timeFramesNonWorkingMode: 'visible',
             columnMagnet: '15 minutes',
-            timeFramesMagnet: true,
-            dependencies: {
-                enabled: true,
-                conflictChecker: true
-            },
+            dependencies: false,
             targetDataAddRowIndex: undefined,
             canDraw: function(event) {
                 var isLeftMouseButton = event.button === 0 || event.button === 1;
@@ -226,6 +179,7 @@ angular.module('angularGanttDemoApp')
                     api.tasks.on.filter($scope, logTasksFilterEvent);
 
                     api.data.on.change($scope, function(newData) {
+                        /*
                         if (dataToRemove === undefined) {
                             dataToRemove = [
                                 {'id': newData[2].id}, // Remove Kickoff row
@@ -242,6 +196,8 @@ angular.module('angularGanttDemoApp')
                                 } // Remove order basket from Sprint 2
                             ];
                         }
+                        */
+                        console.log(newData);
                     });
 
                     // When gantt is ready, load data.
