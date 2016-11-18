@@ -22,6 +22,15 @@ angular.module('angularGanttDemoApp')
         // Event handler
         var logDataEvent = function(eventName) {
             $log.info('[Event] ' + eventName);
+            console.log('logDataEvent');
+            $timeout(function () {
+              $scope.collapseAll();
+              $scope.api.tree.expand('1');
+              //$('.gantt-scrollable').scrollLeft(480);
+              $('.gantt-table-content').attr('style', 'border-left: 2px solid #dddddd;');
+              $('.gantt-row-label-header').attr('style', 'border-left: 2px solid #dddddd;');
+              $('.gantt-tree-body').attr('style', 'border-left: 2px solid #dddddd;');
+            }, 500);
         };
 
         // Event handler
@@ -81,37 +90,33 @@ angular.module('angularGanttDemoApp')
             maxHeight: false,
             width: false,
             zoom: 1,
-            columns: ['model.name', 'from', 'to'],
-            treeTableColumns: ['from', 'to'],
-            columnsHeaders: {'model.name' : 'Name', 'from': 'From', 'to': 'To'},
-            columnsClasses: {'model.name' : 'gantt-column-name', 'from': 'gantt-column-from', 'to': 'gantt-column-to'},
+            columns: ['model.name', 'workmin'],
+            treeTableColumns: ['workmin'],
+            columnsHeaders: {'model.name' : '作業項目', 'workmin': '分'},
+            columnsClasses: {'model.name' : 'gantt-column-name', 'workmin': 'gantt-column-workmin'},
             columnsFormatters: {
-                'from': function(from) {
-                    return from !== undefined ? from.format('lll') : undefined;
-                },
-                'to': function(to) {
-                    return to !== undefined ? to.format('lll') : undefined;
+                'workmin': function (value, column, row) {
+                  return row.model.workmin !== undefined ? row.model.workmin : undefined;
                 }
             },
             treeHeaderContent: '<i class="fa fa-align-justify"></i> {{getHeader()}}',
             columnsHeaderContents: {
                 'model.name': '<i class="fa fa-align-justify"></i> {{getHeader()}}',
-                'from': '<i class="fa fa-calendar"></i> {{getHeader()}}',
-                'to': '<i class="fa fa-calendar"></i> {{getHeader()}}'
+                'workmin': '<i class="fa fa-clock-o"></i> {{getHeader()}}'
             },
             autoExpand: 'none',
             taskOutOfRange: 'truncate',
-            fromDate: moment(new Date(2016, 12, 15, 0, 0, 0)),
-            toDate: moment(new Date(2016, 12, 16, 12, 0, 0)),
+            fromDate: moment(new Date(2016, 11, 15, 8, 0, 0)),
+            toDate: moment(new Date(2016, 11, 16, 8, 0, 0)),
             rowContent: '<i class="fa fa-align-justify"></i> {{row.model.name}}',
             taskContent : '<i class="fa fa-tasks"></i> {{task.model.name}}',
             allowSideResizing: true,
             labelsEnabled: true,
-            currentDate: 'line',
-            currentDateValue: moment(new Date(2016, 12, 15, 11, 20, 0)),
+            currentDate: 'none',
+            currentDateValue: moment(new Date(2016, 11, 15, 11, 20, 0)),
             draw: true,
             readOnly: false,
-            groupDisplayMode: 'group',
+            groupDisplayMode: 'none',//'group',
             filterTask: '',
             filterRow: '',
             columnMagnet: '15 minutes',
@@ -251,6 +256,11 @@ angular.module('angularGanttDemoApp')
             }
         };
 
+        $scope.headersFormats = {
+          day: 'MM月DD日',
+          hour: 'HH:mm'
+        };
+
         $scope.handleTaskIconClick = function(taskModel) {
             alert('Icon from ' + taskModel.name + ' task has been clicked.');
         };
@@ -304,7 +314,7 @@ angular.module('angularGanttDemoApp')
                 return 800 * zoom;
             }
 
-            return 40 * zoom;
+            return 60 * zoom;
         };
 
         // Reload data action
@@ -312,7 +322,7 @@ angular.module('angularGanttDemoApp')
             $scope.data = Sample.getSampleData();
             dataToRemove = undefined;
 
-            $scope.timespans = Sample.getSampleTimespans();
+            //$scope.timespans = Sample.getSampleTimespans();
         };
 
         $scope.reload = function() {

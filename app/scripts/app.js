@@ -26,4 +26,5 @@ angular.module('angularGanttDemoApp', [
     'mgcrea.ngStrap'
 ]).config(['$compileProvider', function($compileProvider) {
     $compileProvider.debugInfoEnabled(false); // Remove debug info (angularJS >= 1.3)
+    //treeConfig.defaultCollapsed = true;
 }]);

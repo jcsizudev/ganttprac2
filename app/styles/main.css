@@ -60,3 +60,9 @@ textarea.live-row {
     font-size: 0.9em;
     color: #333;
 }
+
+.gantt-column-workmin {
+  width: 50px;
+  text-align: right;
+  padding-right: 5px;
+}

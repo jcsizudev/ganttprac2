@@ -79,11 +79,13 @@
                                          current-date="options.currentDate"
                                          current-date-value="options.currentDateValue"
                                          headers="options.width && options.shortHeaders || options.longHeaders"
+                                         headers-formats="headersFormats"
                                          max-height="options.maxHeight && 600 || 0"
                                          api="options.api"
                                          column-magnet="options.columnMagnet">
                                         <gantt-tree enabled="options.sideMode === 'Tree' || options.sideMode === 'TreeTable'"
                                                     header-content="options.treeHeaderContent"
+                                                    header="'作業項目'"
                                                     keep-ancestor-on-filter-row="true">
                                         </gantt-tree>
                                         <gantt-table enabled="options.sideMode === 'Table' || options.sideMode === 'TreeTable'"
@@ -140,6 +142,7 @@
 
 <!-- build:js(.) scripts/vendor.js -->
 <!-- bower:js -->
+<script src="bower_components/jquery/dist/jquery.js"></script>
 <script src="bower_components/angular/angular.js"></script>
 <script src="bower_components/angular-sanitize/angular-sanitize.js"></script>
 <script src="bower_components/angular-animate/angular-animate.js"></script>
@@ -163,5 +166,10 @@
 <script src="scripts/controllers/main.js"></script>
 <script src="scripts/services/sample.js"></script>
 <!-- endbuild -->
+<script type="text/javascript">
+  $(document).ready(function() {
+    //$('.gantt-scrollable').scrollLeft(320);
+  });
+</script>
 </body>
 </html>
