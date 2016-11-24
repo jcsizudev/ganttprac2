@@ -33,7 +33,7 @@ angular.module('angularGanttDemoApp')
                             movable: false
                           }
                         ]},
-                        {name: '', id: '0', workmin: 150, color: '#E0FFFF', tasks: []},
+                        {name: '', id: '0', workmin: 150, drawTask: false, color: '#E0FFFF', tasks: []},
                         {name: '製造所', id: '1', drawTask: false, color: '#FFFAC2', tasks: []},
                         {name: '荷卸し', id: '10', parent: '1', workmin: 60, tasks: [
                           {

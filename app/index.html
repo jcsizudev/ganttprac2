@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="bower_components/angular-ui-tree/dist/angular-ui-tree.css" />
     <link rel="stylesheet" href="bower_components/angular-gantt/assets/angular-gantt.css" />
     <link rel="stylesheet" href="bower_components/angular-gantt/assets/angular-gantt-plugins.css" />
+    <link rel="stylesheet" href="bower_components/angular-motion/dist/angular-motion.css" />
     <!-- endbower -->
     <!-- endbuild -->
     <!-- build:css(.tmp) styles/main.css -->
@@ -34,6 +35,14 @@
 <!--[if lt IE 7]>
 <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
 <![endif]-->
+
+<nav class="navbar navbar-default">
+  <div class="container-fruid">
+    <div class="navbar-header" style="width:100%;">
+      <h3 style="text-align:center;">個人別作業登録</h3>
+    </div>
+  </div>
+</nav>
 
 <div ng-controller="MainCtrl">
     <div class="container-content" ng-show="false">
@@ -53,11 +62,20 @@
                     <div class="panel-group" bs-collapse>
                         <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h4 class="panel-title">
-                                    <a href="" bs-collapse-toggle>Gantt</a>
-                                </h4>
+                              <table style="width: 100%;">
+                                <tr>
+                                  <td>作業日：2016年12月15日</td>
+                                  <td>事業所：150_石狩LC</td>
+                                  <td>グループ：ＫＣカートＧその他</td>
+                                  <td>作業者：741047_後藤　悠哉</td>
+                                  <td style="text-align: right;">
+                                    <a class="btn btn-primary" href="#" >作業者選択</a>
+                                    <a class="btn btn-primary" href="#" >基本パターン登録</a>
+                                  </td>
+                                </tr>
+                              </table>
                             </div>
-                            <div class="panel-collapse" bs-collapse-target>
+                            <div class="panel-collapse">
                                 <div class="panel-body">
                                     <div gantt
                                          data="data"
@@ -112,6 +130,20 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="panel-footer">
+                              <table style="width: 100%;">
+                                <tr>
+                                  <td style="text-align: left;">
+                                    <a class="btn btn-success" href="#" >一時保存</a>
+                                    <a class="btn btn-success" href="#" >一時保存からの復元</a>
+                                  </td>
+                                  <td style="text-align: right;">
+                                    <a class="btn btn-primary" href="#" >保存</a>
+                                    <a class="btn btn-primary" href="#" >戻る</a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -119,7 +151,6 @@
         </div>
     </div>
 </div>
-
 
 <!-- Google Analytics: change UA-XXXXX-X to be your site's ID
  <script>

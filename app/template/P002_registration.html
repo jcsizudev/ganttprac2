@@ -1,0 +1,33 @@
+<div class="popoverForm" style="width: 250px;">
+  <div clas="form-group">
+    <div class="input-group">
+        <div class="input-group-addon">開始時刻</div>
+        <input type="text" class="form-control" size="8" ng-model="tmpTaskTimeFrom" name="time" bs-timepicker data-time-format="HH:mm" data-length="1" data-minute-step="1" data-arrow-behavior="picker">
+      </div>
+      <br />
+      <div class="input-group">
+        <div class="input-group-addon">終了時刻</div>
+        <input type="text" class="form-control" size="8" ng-model="tmpTaskTimeTo" name="time" bs-timepicker data-time-format="HH:mm" data-length="1" data-minute-step="1" data-arrow-behavior="picker">
+    </div>
+  </div>
+  <br />
+  <div class="form-actions" style="text-align: right;">
+    <button type="button" class="btn btn-md btn-default">
+      <!--
+      ng-click="ctrl.onClickBack()"
+      ng-disabled="ctrl.backDisabled()">
+    -->
+      <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+      戻る
+    </button>
+    <button type="button" class="btn btn-md btn-success">
+      <!--
+      ng-click="ctrl.onClickAdd()"
+      ng-disabled="ctrl.addDisabled()"
+      ng-show="ctrl.editable">
+      -->
+      <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+      新規追加
+    </button>
+  </div>
+</div>

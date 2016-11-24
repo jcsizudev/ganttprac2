@@ -8,7 +8,7 @@
  * Controller of the angularGanttDemoApp
  */
 angular.module('angularGanttDemoApp')
-    .controller('MainCtrl', ['$scope', '$timeout', '$log', 'ganttUtils', 'GanttObjectModel', 'Sample', 'ganttMouseOffset', 'ganttDebounce', 'moment', function($scope, $timeout, $log, utils, ObjectModel, Sample, mouseOffset, debounce, moment) {
+    .controller('MainCtrl', ['$scope', '$timeout', '$log', 'ganttUtils', 'GanttObjectModel', 'Sample', 'ganttMouseOffset', 'ganttDebounce', 'moment', '$modal', '$popover', function($scope, $timeout, $log, utils, ObjectModel, Sample, mouseOffset, debounce, moment, $modal, $popover) {
         var objectModel;
         var dataToRemove;
 
@@ -80,6 +80,8 @@ angular.module('angularGanttDemoApp')
             };
         };
 
+        $scope.tmpTaskTimeFrom = moment(new Date());
+        $scope.tmpTaskTimeTo = moment(new Date());
         // angular-gantt options
         $scope.options = {
             mode: 'custom',
@@ -240,6 +242,31 @@ angular.module('angularGanttDemoApp')
                             element.bind('click', function() {
                                 logRowEvent('row-label-click', directiveScope.row);
                             });
+                            /*
+                            element.bind('contextmenu', function() {
+                                rowContextMenuClick('row-label-context', directiveScope.row);
+                                return false;
+                            });
+                            */
+                            if (element[0].nodeName === 'SPAN' && directiveScope.row && directiveScope.row.model) {
+                              console.log(directiveScope.row.model.drawTask === false);
+                              if (directiveScope.row.model.drawTask === false) {
+                                element.bind('contextmenu', function() {
+                                    return false;
+                                });
+                              }
+                              else {
+                                $popover(element, {
+                                  animation: 'am-flip-x',
+                                  autoClose: true,
+                                  title: '作業時間登録',
+                                  contentTemplate: 'template/P002_registration.html',
+                                  trigger: 'contextmenu',
+                                  container: 'body'
+                                });
+                              }
+                            }
+
                             element.bind('mousedown touchstart', function() {
                                 $scope.live.row = directiveScope.row.model;
                                 $scope.$digest();
