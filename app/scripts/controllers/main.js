@@ -8,9 +8,17 @@
  * Controller of the angularGanttDemoApp
  */
 angular.module('angularGanttDemoApp')
-    .controller('MainCtrl', ['$scope', '$timeout', '$log', 'ganttUtils', 'GanttObjectModel', 'Sample', 'ganttMouseOffset', 'ganttDebounce', 'moment', '$modal', '$popover', function($scope, $timeout, $log, utils, ObjectModel, Sample, mouseOffset, debounce, moment, $modal, $popover) {
+    .controller('MainCtrl', [
+      '$scope', '$timeout', '$log', 'ganttUtils', 'GanttObjectModel',
+      'Sample', 'ganttMouseOffset', 'ganttDebounce', 'moment',
+      '$modal', '$popover', function(
+        $scope, $timeout, $log, utils, ObjectModel, Sample,
+        mouseOffset, debounce, moment,
+        $modal, $popover
+      ) {
         var objectModel;
         var dataToRemove;
+        var firstLoad = true;
 
         // Event handler
         var logScrollEvent = function(left, date, direction) {
@@ -22,14 +30,30 @@ angular.module('angularGanttDemoApp')
         // Event handler
         var logDataEvent = function(eventName) {
             $log.info('[Event] ' + eventName);
-            console.log('logDataEvent');
+            //console.log('logDataEvent');
             $timeout(function () {
               $scope.collapseAll();
               $scope.api.tree.expand('1');
               //$('.gantt-scrollable').scrollLeft(480);
-              $('.gantt-table-content').attr('style', 'border-left: 2px solid #dddddd;');
-              $('.gantt-row-label-header').attr('style', 'border-left: 2px solid #dddddd;');
-              $('.gantt-tree-body').attr('style', 'border-left: 2px solid #dddddd;');
+              angular.element(document.getElementsByClassName('gantt-table-content')).attr('style', 'border-left: 2px solid #dddddd;');
+              angular.element(document.getElementsByClassName('gantt-row-label-header')).attr('style', 'border-left: 2px solid #dddddd;');
+              angular.element(document.getElementsByClassName('gantt-tree-body')).attr('style', 'border-left: 2px solid #dddddd;');
+              document.oncontextmenu = function() {
+                return false;
+              };
+              angular.forEach($scope.loadtask, function (task) {
+                if ($scope.taskcheck.includes(task.model.id) === false) {
+                  $scope.taskcheck.push(task.model.id);
+                  task.$element.bind('contextmenu', function(e) {
+                      createPopover(angular.element(e.currentTarget), task.row);
+                      return false;
+                  });
+                }
+
+                console.log(task);
+              });
+              firstLoad = false;
+              $scope.loadtask = [];
             }, 500);
         };
 
@@ -39,8 +63,9 @@ angular.module('angularGanttDemoApp')
         };
 
         // Event handler
-        var logRowEvent = function(eventName, row) {
+        var logRowEvent = function(eventName, row, e) {
             $log.info('[Event] ' + eventName + ': ' + row.model.name);
+            console.log(e);
         };
 
         // Event handler
@@ -80,8 +105,58 @@ angular.module('angularGanttDemoApp')
             };
         };
 
-        $scope.tmpTaskTimeFrom = moment(new Date());
-        $scope.tmpTaskTimeTo = moment(new Date());
+        /*
+        $scope.onRegPopClickBack = function () {
+          console.log('Reg-Back');
+          console.log($(this));
+        };
+
+        $scope.onRegPopClickAdd = function () {
+          console.log('Reg-Add');
+          console.log($(this));
+        };
+        */
+
+        $scope.pops = {
+          fromDate: new Date(2016, 11, 15, 8, 30, 0),
+          toDate: new Date(2016, 11, 15, 9, 30, 0),
+          addFunc: function () {
+            var ft = moment($scope.pops.fromDate);
+            var tt = moment($scope.pops.toDate);
+            console.log('TaskRegister-Row:' + ft.format('HH:mm') + '-' + tt.format('HH:mm'));
+          }
+        };
+        var createPopover = function (element, row) {
+          var pp = $popover(element, {
+            animation: 'am-flip-x',
+            autoClose: true,
+            placement: 'bottom left right',
+            title: '作業時間登録',
+            content: 'OK',
+            templateUrl: 'template/P002_registration.html',
+            trigger: 'manual',
+            container: 'body',
+            onShow: function (e) {
+              console.log('show');
+              console.log(e);
+            },
+            onHide: function (e) {
+              console.log('hide');
+              console.log(e);
+            }
+          });
+          pp.$promise.then(function () {
+            pp.show();
+            console.log(pp.$scope);
+            pp.$scope.pops = $scope.pops;
+          });
+          console.log(row.model.id);
+        };
+
+        $scope.rowcheck = [];
+        $scope.taskcheck = [];
+        $scope.loadtask = [];
+
         // angular-gantt options
         $scope.options = {
             mode: 'custom',
@@ -132,7 +207,7 @@ angular.module('angularGanttDemoApp')
                 return {
                     id: utils.randomUuid(),  // Unique id of the task.
                     name: 'Drawn task', // Name shown on top of each task.
-                    color: '#AA8833' // Color of the task in HEX format (Optional).
+                    color: '#90EE90' // Color of the task in HEX format (Optional).
                 };
             },
             api: function(api) {
@@ -149,8 +224,25 @@ angular.module('angularGanttDemoApp')
                     api.data.on.clear($scope, addEventName('data.on.clear', logDataEvent));
                     api.data.on.change($scope, addEventName('data.on.change', logDataEvent));
 
-                    api.tasks.on.add($scope, addEventName('tasks.on.add', logTaskEvent));
-                    api.tasks.on.change($scope, addEventName('tasks.on.change', logTaskEvent));
+                    //api.tasks.on.add($scope, addEventName('tasks.on.add', logTaskEvent));
+                    api.tasks.on.add($scope, function (newData) {
+                      console.log('Add!');
+                      console.log(newData);
+                      if (firstLoad === true) {
+                        if (newData.row.model.drawTask === false) {
+                          // タスク追加できない行
+                        }
+                        else {
+                          $scope.loadtask.push(newData);
+                        }
+                      }
+                    });
+                    //api.tasks.on.change($scope, addEventName('tasks.on.change', logTaskEvent));
+                    api.tasks.on.change($scope, function (newData) {
+                      if (newData.model.name !== newData.row.model.name) {
+                          newData.model.name = newData.row.model.name;
+                      }
+                    });
                     api.tasks.on.rowChange($scope, addEventName('tasks.on.rowChange', logTaskEvent));
                     api.tasks.on.remove($scope, addEventName('tasks.on.remove', logTaskEvent));
 
@@ -161,7 +253,16 @@ angular.module('angularGanttDemoApp')
 
                         api.tasks.on.resizeBegin($scope, addEventName('tasks.on.resizeBegin', logTaskEvent));
                         //api.tasks.on.resize($scope, addEventName('tasks.on.resize', logTaskEvent));
-                        api.tasks.on.resizeEnd($scope, addEventName('tasks.on.resizeEnd', logTaskEvent));
+                        //api.tasks.on.resizeEnd($scope, addEventName('tasks.on.resizeEnd', logTaskEvent));
+                        api.tasks.on.resizeEnd($scope, function (newData) {
+                          if ($scope.taskcheck.includes(newData.model.id) === false) {
+                            $scope.taskcheck.push(newData.model.id);
+                            newData.$element.bind('contextmenu', function(e) {
+                                createPopover(angular.element(e.currentTarget), newData.row);
+                                return false;
+                            });
+                          }
+                        });
                     }
 
                     if (api.tasks.on.drawBegin) {
@@ -185,26 +286,8 @@ angular.module('angularGanttDemoApp')
                     api.rows.on.filter($scope, logRowsFilterEvent);
                     api.tasks.on.filter($scope, logTasksFilterEvent);
 
-                    api.data.on.change($scope, function(newData) {
-                        /*
-                        if (dataToRemove === undefined) {
-                            dataToRemove = [
-                                {'id': newData[2].id}, // Remove Kickoff row
-                                {
-                                    'id': newData[0].id, 'tasks': [
-                                    {'id': newData[0].tasks[0].id},
-                                    {'id': newData[0].tasks[3].id}
-                                ]
-                                }, // Remove some Milestones
-                                {
-                                    'id': newData[7].id, 'tasks': [
-                                    {'id': newData[7].tasks[0].id}
-                                ]
-                                } // Remove order basket from Sprint 2
-                            ];
-                        }
-                        */
-                        console.log(newData);
+                    api.data.on.change($scope, function() {
+                        //console.log(newData);
                     });
 
                     // When gantt is ready, load data.
@@ -231,7 +314,7 @@ angular.module('angularGanttDemoApp')
                         } else if (directiveName === 'ganttRow') {
                             element.bind('click', function(event) {
                                 event.stopPropagation();
-                                logRowEvent('row-click', directiveScope.row);
+                                logRowEvent('row-click', directiveScope.row, event);
                             });
                             element.bind('mousedown touchstart', function(event) {
                                 event.stopPropagation();
@@ -239,31 +322,24 @@ angular.module('angularGanttDemoApp')
                                 $scope.$digest();
                             });
                         } else if (directiveName === 'ganttRowLabel') {
-                            element.bind('click', function() {
-                                logRowEvent('row-label-click', directiveScope.row);
+                            // clickイベント
+                            element.bind('click', function(event) {
+                                event.stopPropagation();
+                                logRowEvent('row-label-click', directiveScope.row, event);
                             });
-                            /*
-                            element.bind('contextmenu', function() {
-                                rowContextMenuClick('row-label-context', directiveScope.row);
-                                return false;
-                            });
-                            */
+
                             if (element[0].nodeName === 'SPAN' && directiveScope.row && directiveScope.row.model) {
-                              console.log(directiveScope.row.model.drawTask === false);
                               if (directiveScope.row.model.drawTask === false) {
-                                element.bind('contextmenu', function() {
-                                    return false;
-                                });
+                                // タスク設定出来ない行
                               }
                               else {
-                                $popover(element, {
-                                  animation: 'am-flip-x',
-                                  autoClose: true,
-                                  title: '作業時間登録',
-                                  contentTemplate: 'template/P002_registration.html',
-                                  trigger: 'contextmenu',
-                                  container: 'body'
-                                });
+                                if ($scope.rowcheck.includes(directiveScope.row.model) === false) {
+                                  $scope.rowcheck.push(directiveScope.row.model);
+                                  element.bind('contextmenu', function(e) {
+                                      createPopover(angular.element(e.currentTarget), directiveScope.row);
+                                      return false;
+                                  });
+                                }
                               }
                             }
 
@@ -346,13 +422,16 @@ angular.module('angularGanttDemoApp')
 
         // Reload data action
         $scope.load = function() {
+            console.log('***Load');
             $scope.data = Sample.getSampleData();
             dataToRemove = undefined;
+            $scope.rowcheck = [];
 
             //$scope.timespans = Sample.getSampleTimespans();
         };
 
         $scope.reload = function() {
+            console.log('***Reload');
             $scope.load();
         };
 
@@ -477,5 +556,6 @@ angular.module('angularGanttDemoApp')
         $scope.$watchCollection('live.row.tasks', function() {
             $scope.live.rowJson = angular.toJson($scope.live.row, true);
         });
+
 
     }]);

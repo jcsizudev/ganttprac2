@@ -66,3 +66,8 @@ textarea.live-row {
   text-align: right;
   padding-right: 5px;
 }
+
+.datepicker.dropdown-menu button, .timepicker.dropdown-menu button {
+  outline: 0;
+  border: 0;
+}

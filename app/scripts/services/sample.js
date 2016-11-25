@@ -39,20 +39,20 @@ angular.module('angularGanttDemoApp')
                           {
                               id: '100',
                               name: '荷卸し',
-                              color: '#9FC5F8',
+                              color: '#90EE90',
                               from: new Date(2016, 11, 15, 8, 0, 0),
                               to: new Date(2016, 11, 15, 9, 0, 0),
                               workmin: 60,
-                              movable: false
                           }
                         ]},
                         {name: '入荷検品', id: '11', parent: '1', workmin: 90, tasks: [
                           {
                               id: '101',
                               name: '入荷検品',
-                              color: '#F1C232',
+                              color: '#90EE90',
                               from: new Date(2016, 11, 15, 9, 0, 0),
                               to: new Date(2016, 11, 15, 10, 30, 0),
+                              workmin: 30,
                           }
                         ]},
                         {name: '荷役（入荷）', id: '12', parent: '1', tasks: []},

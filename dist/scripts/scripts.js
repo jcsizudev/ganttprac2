@@ -26,6 +26,7 @@ angular.module('angularGanttDemoApp', [
     'mgcrea.ngStrap'
 ]).config(['$compileProvider', function($compileProvider) {
     $compileProvider.debugInfoEnabled(false); // Remove debug info (angularJS >= 1.3)
+    //treeConfig.defaultCollapsed = true;
 }]);
 
 'use strict';
@@ -38,7 +39,7 @@ angular.module('angularGanttDemoApp', [
  * Controller of the angularGanttDemoApp
  */
 angular.module('angularGanttDemoApp')
-    .controller('MainCtrl', ['$scope', '$timeout', '$log', 'ganttUtils', 'GanttObjectModel', 'Sample', 'ganttMouseOffset', 'ganttDebounce', 'moment', function($scope, $timeout, $log, utils, ObjectModel, Sample, mouseOffset, debounce, moment) {
+    .controller('MainCtrl', ['$scope', '$timeout', '$log', 'ganttUtils', 'GanttObjectModel', 'Sample', 'ganttMouseOffset', 'ganttDebounce', 'moment', '$modal', '$popover', function($scope, $timeout, $log, utils, ObjectModel, Sample, mouseOffset, debounce, moment, $modal, $popover) {
         var objectModel;
         var dataToRemove;
 
@@ -52,6 +53,15 @@ angular.module('angularGanttDemoApp')
         // Event handler
         var logDataEvent = function(eventName) {
             $log.info('[Event] ' + eventName);
+            //console.log('logDataEvent');
+            $timeout(function () {
+              $scope.collapseAll();
+              $scope.api.tree.expand('1');
+              //$('.gantt-scrollable').scrollLeft(480);
+              $('.gantt-table-content').attr('style', 'border-left: 2px solid #dddddd;');
+              $('.gantt-row-label-header').attr('style', 'border-left: 2px solid #dddddd;');
+              $('.gantt-tree-body').attr('style', 'border-left: 2px solid #dddddd;');
+            }, 500);
         };
 
         // Event handler
@@ -60,8 +70,9 @@ angular.module('angularGanttDemoApp')
         };
 
         // Event handler
-        var logRowEvent = function(eventName, row) {
+        var logRowEvent = function(eventName, row, e) {
             $log.info('[Event] ' + eventName + ': ' + row.model.name);
+            console.log(e);
         };
 
         // Event handler
@@ -101,6 +112,48 @@ angular.module('angularGanttDemoApp')
             };
         };
 
+        /*
+        $scope.onRegPopClickBack = function () {
+          console.log('Reg-Back');
+          console.log($(this));
+        };
+
+        $scope.onRegPopClickAdd = function () {
+          console.log('Reg-Add');
+          console.log($(this));
+        };
+        */
+
+        $scope.popover = {
+          fromDate: '1970-01-01T09:30:40.000Z',
+          toDate: '1970-01-01T09:30:40.000Z',
+          addFunc: function () {
+            console.log('OK!');
+          },
+          create: function (element, row) {
+            var pp = $popover(element, {
+              animation: 'am-flip-x',
+              autoClose: true,
+              title: '作業時間登録',
+              contentTemplate: 'template/P002_registration.html',
+              trigger: 'manual',
+              container: 'body',
+              onShow: function () {
+                console.log('PASS1');
+                //$('#idTaskBtnBack').each().bind('click', function () {
+                //  console.log('PASS2');
+                //});
+                $('#idTaskBtnBack').click(function (e) {
+                  console.log('PASS2');
+                });
+                //$('#idTaskBtnAdd').click($scope.onRegPopClickBack);
+              }
+            });
+            pp.show();
+            //console.log(pp);
+          }
+        };
+
         // angular-gantt options
         $scope.options = {
             mode: 'custom',
@@ -111,37 +164,33 @@ angular.module('angularGanttDemoApp')
             maxHeight: false,
             width: false,
             zoom: 1,
-            columns: ['model.name', 'from', 'to'],
-            treeTableColumns: ['from', 'to'],
-            columnsHeaders: {'model.name' : 'Name', 'from': 'From', 'to': 'To'},
-            columnsClasses: {'model.name' : 'gantt-column-name', 'from': 'gantt-column-from', 'to': 'gantt-column-to'},
+            columns: ['model.name', 'workmin'],
+            treeTableColumns: ['workmin'],
+            columnsHeaders: {'model.name' : '作業項目', 'workmin': '分'},
+            columnsClasses: {'model.name' : 'gantt-column-name', 'workmin': 'gantt-column-workmin'},
             columnsFormatters: {
-                'from': function(from) {
-                    return from !== undefined ? from.format('lll') : undefined;
-                },
-                'to': function(to) {
-                    return to !== undefined ? to.format('lll') : undefined;
+                'workmin': function (value, column, row) {
+                  return row.model.workmin !== undefined ? row.model.workmin : undefined;
                 }
             },
             treeHeaderContent: '<i class="fa fa-align-justify"></i> {{getHeader()}}',
             columnsHeaderContents: {
                 'model.name': '<i class="fa fa-align-justify"></i> {{getHeader()}}',
-                'from': '<i class="fa fa-calendar"></i> {{getHeader()}}',
-                'to': '<i class="fa fa-calendar"></i> {{getHeader()}}'
+                'workmin': '<i class="fa fa-clock-o"></i> {{getHeader()}}'
             },
             autoExpand: 'none',
             taskOutOfRange: 'truncate',
-            fromDate: moment(new Date(2016, 12, 15, 0, 0, 0)),
-            toDate: moment(new Date(2016, 12, 16, 12, 0, 0)),
+            fromDate: moment(new Date(2016, 11, 15, 8, 0, 0)),
+            toDate: moment(new Date(2016, 11, 16, 8, 0, 0)),
             rowContent: '<i class="fa fa-align-justify"></i> {{row.model.name}}',
             taskContent : '<i class="fa fa-tasks"></i> {{task.model.name}}',
             allowSideResizing: true,
             labelsEnabled: true,
-            currentDate: 'line',
-            currentDateValue: moment(new Date(2016, 12, 15, 11, 20, 0)),
+            currentDate: 'none',
+            currentDateValue: moment(new Date(2016, 11, 15, 11, 20, 0)),
             draw: true,
             readOnly: false,
-            groupDisplayMode: 'group',
+            groupDisplayMode: 'none',//'group',
             filterTask: '',
             filterRow: '',
             columnMagnet: '15 minutes',
@@ -159,10 +208,12 @@ angular.module('angularGanttDemoApp')
                 };
             },
             api: function(api) {
+                console.log('***API');
                 // API Object is used to control methods and events from angular-gantt.
                 $scope.api = api;
 
                 api.core.on.ready($scope, function() {
+                    console.log('***API_Ready');
                     // Log various events to console
                     api.scroll.on.scroll($scope, logScrollEvent);
                     api.core.on.ready($scope, logReadyEvent);
@@ -254,7 +305,7 @@ angular.module('angularGanttDemoApp')
                         } else if (directiveName === 'ganttRow') {
                             element.bind('click', function(event) {
                                 event.stopPropagation();
-                                logRowEvent('row-click', directiveScope.row);
+                                logRowEvent('row-click', directiveScope.row, event);
                             });
                             element.bind('mousedown touchstart', function(event) {
                                 event.stopPropagation();
@@ -262,9 +313,82 @@ angular.module('angularGanttDemoApp')
                                 $scope.$digest();
                             });
                         } else if (directiveName === 'ganttRowLabel') {
-                            element.bind('click', function() {
-                                logRowEvent('row-label-click', directiveScope.row);
+                            if (directiveScope.row.model.id === '1') {
+                              console.log('pass-製造所');
+                              console.log(element);
+                              //console.log(element.click);
+                              console.log(jQuery._data($(element).get(0)));
+                              if (jQuery._data($(element).get(0)).hasOwnProperty('events')) {
+                                if (jQuery._data($(element).get(0)).events.hasOwnProperty('contextmenu')) {
+                                  console.log(jQuery._data($(element).get(0)).events.click);
+                                }
+                              }
+                              //var obj = jQuery._data($(element).get(0)).events;
+                              //console.log(obj.hasOwnProperty('click'));
+                              //console.log(jQuery._data($(element).get(0)).events.click);
+                            }
+
+                            // clickイベント
+                            if (jQuery._data($(element).get(0)).hasOwnProperty('events')
+                              && jQuery._data($(element).get(0)).events.hasOwnProperty('click')) {
+                              // イベント設定済み
+                            }
+                            else {
+                              element.bind('click', function() {
+                                  logRowEvent('row-label-click', directiveScope.row, event);
+                              });
+                            }
+
+                            /*
+                            element.bind('contextmenu', function() {
+                                rowContextMenuClick('row-label-context', directiveScope.row);
+                                return false;
                             });
+                            */
+                            // contextmenuイベント
+                            if (jQuery._data($(element).get(0)).hasOwnProperty('events')
+                              && jQuery._data($(element).get(0)).events.hasOwnProperty('contextmenu')) {
+                              // イベント設定済み
+                            }
+                            else {
+                              if (element[0].nodeName === 'SPAN' && directiveScope.row && directiveScope.row.model) {
+                                if (directiveScope.row.model.drawTask === false) {
+                                  // タスク設定出来ない行
+                                  element.bind('contextmenu', function() {
+                                      return false;
+                                  });
+                                }
+                                else {
+                                  // ポップオーバー設定
+                                  /*
+                                  $popover(element, {
+                                    animation: 'am-flip-x',
+                                    autoClose: true,
+                                    title: '作業時間登録',
+                                    contentTemplate: 'template/P002_registration.html',
+                                    trigger: 'manual',
+                                    container: 'body',
+                                    onShow: function () {
+                                      console.log('PASS1');
+                                      //$('#idTaskBtnBack').each().bind('click', function () {
+                                      //  console.log('PASS2');
+                                      //});
+                                      $('#idTaskBtnBack').click(function (e) {
+                                        console.log('PASS2');
+                                      });
+                                      //$('#idTaskBtnAdd').click($scope.onRegPopClickBack);
+                                    }
+                                  });
+                                  */
+                                  element.bind('contextmenu', function(e) {
+                                      console.log($(e.currentTarget));
+                                      $scope.popover.create($(e.currentTarget), directiveScope.row);
+                                      return false;
+                                  });
+                                }
+                              }
+                            }
+
                             element.bind('mousedown touchstart', function() {
                                 $scope.live.row = directiveScope.row.model;
                                 $scope.$digest();
@@ -279,6 +403,11 @@ angular.module('angularGanttDemoApp')
                     objectModel = new ObjectModel(api);
                 });
             }
+        };
+
+        $scope.headersFormats = {
+          day: 'MM月DD日',
+          hour: 'HH:mm'
         };
 
         $scope.handleTaskIconClick = function(taskModel) {
@@ -334,18 +463,20 @@ angular.module('angularGanttDemoApp')
                 return 800 * zoom;
             }
 
-            return 40 * zoom;
+            return 60 * zoom;
         };
 
         // Reload data action
         $scope.load = function() {
+            console.log('***Load');
             $scope.data = Sample.getSampleData();
             dataToRemove = undefined;
 
-            $scope.timespans = Sample.getSampleTimespans();
+            //$scope.timespans = Sample.getSampleTimespans();
         };
 
         $scope.reload = function() {
+            console.log('***Reload');
             $scope.load();
         };
 
@@ -471,6 +602,7 @@ angular.module('angularGanttDemoApp')
             $scope.live.rowJson = angular.toJson($scope.live.row, true);
         });
 
+
     }]);
 
 'use strict';
@@ -488,13 +620,90 @@ angular.module('angularGanttDemoApp')
             getSampleData: function() {
                 return [
                         // Order is optional. If not specified it will be assigned automatically
-                        {name: '勤務計画', sortable: false, drawTask: false, color: '#A9E2F3', tasks: []},
-                        {name: '就業実績', sortable: false, drawTask: false, color: '#A9E2F3', tasks: []},
-                        {name: 'Status meetings', tasks: []},
-                        {name: 'Kickoff', movable: {allowResizing: false}, tasks: []},
-                        {name: 'Create concept', tasks: []},
-                        {name: 'Finalize concept', tasks: []},
-                        {name: 'Hosting'}
+                        {name: '勤務計画', sortable: false, drawTask: false, color: '#E0FFFF', tasks: [
+                          {
+                            id: '50',
+                            name: '',
+                            color: '#B0B0B0',
+                            from: new Date(2016, 11, 15, 9, 0, 0),
+                            to: new Date(2016, 11, 15, 19, 0, 0),
+                            movable: false
+                          }
+                        ]},
+                        {name: '就業実績', sortable: false, drawTask: false, color: '#E0FFFF', tasks: [
+                          {
+                            id: '51',
+                            name: '',
+                            color: '#6495ED',
+                            from: new Date(2016, 11, 15, 8, 0, 0),
+                            to: new Date(2016, 11, 15, 20, 30, 0),
+                            movable: false
+                          }
+                        ]},
+                        {name: '', id: '0', workmin: 150, drawTask: false, color: '#E0FFFF', tasks: []},
+                        {name: '製造所', id: '1', drawTask: false, color: '#FFFAC2', tasks: []},
+                        {name: '荷卸し', id: '10', parent: '1', workmin: 60, tasks: [
+                          {
+                              id: '100',
+                              name: '荷卸し',
+                              color: '#9FC5F8',
+                              from: new Date(2016, 11, 15, 8, 0, 0),
+                              to: new Date(2016, 11, 15, 9, 0, 0),
+                              workmin: 60,
+                              movable: false
+                          }
+                        ]},
+                        {name: '入荷検品', id: '11', parent: '1', workmin: 90, tasks: [
+                          {
+                              id: '101',
+                              name: '入荷検品',
+                              color: '#F1C232',
+                              from: new Date(2016, 11, 15, 9, 0, 0),
+                              to: new Date(2016, 11, 15, 10, 30, 0),
+                          }
+                        ]},
+                        {name: '荷役（入荷）', id: '12', parent: '1', tasks: []},
+                        {name: '出荷検品', id: '13', parent: '1', tasks: []},
+                        {name: '荷役（出荷）', id: '14', parent: '1', tasks: []},
+                        {name: '本倉庫', id: '2', drawTask: false, color: '#FFFAC2', tasks: []},
+                        {name: '梱', id: '21', parent: '2', drawTask: false, color: '#FFFAC2', tasks: []},
+                        {name: '入荷', id: '211', parent: '21', drawTask: false, color: '#FFFAC2', tasks: []},
+                        {name: '１Ｆ', id: '2111', parent: '211', tasks: []},
+                        {name: '２Ｆ', id: '2112', parent: '211', tasks: []},
+                        {name: '３Ｆ', id: '2113', parent: '211', tasks: []},
+                        {name: '４Ｆ', id: '2114', parent: '211', tasks: []},
+                        {name: '出荷', id: '212', parent: '21', drawTask: false, color: '#FFFAC2', tasks: []},
+                        {name: '１Ｆ', id: '2121', parent: '212', tasks: []},
+                        {name: '２Ｆ', id: '2122', parent: '212', tasks: []},
+                        {name: '３Ｆ', id: '2123', parent: '212', tasks: []},
+                        {name: '４Ｆ', id: '2124', parent: '212', tasks: []},
+
+                        {name: '検品・荷造り・積込', id: '213', parent: '21', tasks: []},
+                        {name: '外部倉庫', id: '214', parent: '21', tasks: []},
+
+                        {name: 'バラ', id: '22', parent: '2', drawTask: false, color: '#FFFAC2', tasks: []},
+                        {name: '商品', id: '221', parent: '22', drawTask: false, color: '#FFFAC2', tasks: []},
+                        {name: 'カート（積送）', id: '2211', parent: '221', tasks: []},
+                        {name: 'カート（広域）', id: '2212', parent: '221', tasks: []},
+                        {name: 'カート（コスミリオン）', id: '2213', parent: '221', tasks: []},
+                        {name: '梱包/積付/他', id: '2214', parent: '221', tasks: []},
+                        {name: '欠山', id: '2215', parent: '221', tasks: []},
+                        {name: '欠山（コスミリオン）', id: '2216', parent: '221', tasks: []},
+
+                        {name: '販促', id: '222', parent: '22', drawTask: false, color: '#FFFAC2', tasks: []},
+                        {name: '販促バラ（積送）', id: '2221', parent: '222', tasks: []},
+                        {name: '販促バラ（経費）', id: '2222', parent: '222', tasks: []},
+                        {name: '販促バラ（広域）', id: '2223', parent: '222', tasks: []},
+                        {name: '積付/他', id: '2224', parent: '222', tasks: []},
+
+                        {name: '輸出業務', id: '23', parent: '2', tasks: []},
+
+                        {name: '他', id: '24', parent: '2', drawTask: false, color: '#FFFAC2', tasks: []},
+                        {name: 'セット加工', id: '241', parent: '24', tasks: []},
+                        {name: '棚卸し', id: '242', parent: '24', tasks: []},
+                        {name: '３Ｓ', id: '243', parent: '24', tasks: []},
+                        {name: '事務', id: '244', parent: '24', tasks: []},
+                        {name: 'その他', id: '245', parent: '24', tasks: []},
                     ];
             },
             getSampleTimespans: function() {

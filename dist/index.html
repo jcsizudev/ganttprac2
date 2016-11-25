@@ -18,12 +18,22 @@
     <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
     <link rel="stylesheet" href="styles/vendor.css">
     <link rel="stylesheet" href="styles/main.css">
+<style type="text/css">
+</style>
 
 </head>
 <body ng-app="angularGanttDemoApp" ng-strict-di>
 <!--[if lt IE 7]>
 <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
 <![endif]-->
+
+<nav class="navbar navbar-default">
+  <div class="container-fruid">
+    <div class="navbar-header" style="width:100%;">
+      <h3 style="text-align:center;">個人別作業登録</h3>
+    </div>
+  </div>
+</nav>
 
 <div ng-controller="MainCtrl">
     <div class="container-content" ng-show="false">
@@ -43,11 +53,20 @@
                     <div class="panel-group" bs-collapse>
                         <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h4 class="panel-title">
-                                    <a href="" bs-collapse-toggle>Gantt</a>
-                                </h4>
+                              <table style="width: 100%;">
+                                <tr>
+                                  <td>作業日：2016年12月15日</td>
+                                  <td>事業所：150_石狩LC</td>
+                                  <td>グループ：ＫＣカートＧその他</td>
+                                  <td>作業者：741047_後藤　悠哉</td>
+                                  <td style="text-align: right;">
+                                    <a class="btn btn-primary" href="#" >作業者選択</a>
+                                    <a class="btn btn-primary" href="#" >基本パターン登録</a>
+                                  </td>
+                                </tr>
+                              </table>
                             </div>
-                            <div class="panel-collapse" bs-collapse-target>
+                            <div class="panel-collapse">
                                 <div class="panel-body">
                                     <div gantt
                                          data="data"
@@ -69,11 +88,13 @@
                                          current-date="options.currentDate"
                                          current-date-value="options.currentDateValue"
                                          headers="options.width && options.shortHeaders || options.longHeaders"
+                                         headers-formats="headersFormats"
                                          max-height="options.maxHeight && 600 || 0"
                                          api="options.api"
                                          column-magnet="options.columnMagnet">
                                         <gantt-tree enabled="options.sideMode === 'Tree' || options.sideMode === 'TreeTable'"
                                                     header-content="options.treeHeaderContent"
+                                                    header="'作業項目'"
                                                     keep-ancestor-on-filter-row="true">
                                         </gantt-tree>
                                         <gantt-table enabled="options.sideMode === 'Table' || options.sideMode === 'TreeTable'"
@@ -100,6 +121,20 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="panel-footer">
+                              <table style="width: 100%;">
+                                <tr>
+                                  <td style="text-align: left;">
+                                    <a class="btn btn-success" href="#" >一時保存</a>
+                                    <a class="btn btn-success" href="#" >一時保存からの復元</a>
+                                  </td>
+                                  <td style="text-align: right;">
+                                    <a class="btn btn-primary" href="#" >保存</a>
+                                    <a class="btn btn-primary" href="#" >戻る</a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -107,7 +142,6 @@
         </div>
     </div>
 </div>
-
 
 <!-- Google Analytics: change UA-XXXXX-X to be your site's ID
  <script>
@@ -128,5 +162,10 @@
 <script src="scripts/vendor.js"></script>
 
 <script src="scripts/scripts.js"></script>
+<script type="text/javascript">
+  $(document).ready(function() {
+    //$('.gantt-scrollable').scrollLeft(320);
+  });
+</script>
 </body>
 </html>
