@@ -55,13 +55,19 @@
                             <div class="panel-heading">
                               <table style="width: 100%;">
                                 <tr>
-                                  <td>作業日：2016年12月15日</td>
-                                  <td>事業所：150_石狩LC</td>
-                                  <td>グループ：ＫＣカートＧその他</td>
-                                  <td>作業者：741047_後藤　悠哉</td>
+                                  <td><strong>作業日</strong>：2016年12月15日</td>
+                                  <td><strong>事業所</strong>：150_石狩LC</td>
+                                  <td><strong>グループ</strong>：ＫＣカートＧその他</td>
+                                  <td><strong>作業者</strong>：741047_後藤　悠哉</td>
                                   <td style="text-align: right;">
-                                    <a class="btn btn-primary" href="#" >作業者選択</a>
-                                    <a class="btn btn-primary" href="#" >基本パターン登録</a>
+                                    <button type="button" class="btn btn-md btn-primary" >
+                                      <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+                                      <strong>作業者選択</strong>
+                                    </button>
+                                    <button type="button" class="btn btn-md btn-primary" >
+                                      <span class="glyphicon glyphicon-book" aria-hidden="true"></span>
+                                      <strong>基本パターン登録</strong>
+                                    </button>
                                   </td>
                                 </tr>
                               </table>
@@ -113,7 +119,7 @@
                                         <gantt-movable enabled="!options.readOnly"></gantt-movable>
                                         <gantt-draw-task
                                             enabled="options.canDraw"
-                                            move-threshold="0"
+                                            move-threshold="5"
                                             task-factory="options.drawTaskFactory">
                                         </gantt-draw-task>
                                         <gantt-overlap></gantt-overlap>
@@ -125,12 +131,24 @@
                               <table style="width: 100%;">
                                 <tr>
                                   <td style="text-align: left;">
-                                    <a class="btn btn-success" href="#" >一時保存</a>
-                                    <a class="btn btn-success" href="#" >一時保存からの復元</a>
+                                    <button type="button" class="btn btn-md btn-success" >
+                                      <span class="glyphicon glyphicon-cloud-upload" aria-hidden="true"></span>
+                                      <strong>一時保存</strong>
+                                    </button>
+                                    <button type="button" class="btn btn-md btn-success" >
+                                      <span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span>
+                                      <strong>一時保存からの復元</strong>
+                                    </button>
                                   </td>
                                   <td style="text-align: right;">
-                                    <a class="btn btn-primary" href="#" >保存</a>
-                                    <a class="btn btn-primary" href="#" >戻る</a>
+                                    <button type="button" class="btn btn-md btn-primary" >
+                                      <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                                      <strong>保存</strong>
+                                    </button>
+                                    <button type="button" class="btn btn-md btn-primary" >
+                                      <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+                                      <strong>戻る</strong>
+                                    </button>
                                   </td>
                                 </tr>
                               </table>
@@ -162,10 +180,6 @@
 <script src="scripts/vendor.js"></script>
 
 <script src="scripts/scripts.js"></script>
-<script type="text/javascript">
-  $(document).ready(function() {
-    //$('.gantt-scrollable').scrollLeft(320);
-  });
-</script>
+
 </body>
 </html>

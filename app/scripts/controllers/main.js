@@ -27,6 +27,80 @@ angular.module('angularGanttDemoApp')
             }
         };
 
+        // popoverパラメータ
+        $scope.pops = {
+          fromDate: new Date(2016, 11, 15, 8, 30, 0),
+          toDate: new Date(2016, 11, 15, 9, 30, 0),
+          addFlg: true,
+          instance: undefined,
+          addFunc: function () {
+            var ft = moment($scope.pops.fromDate);
+            var tt = moment($scope.pops.toDate);
+            console.log('TaskRegister-Row:' + ft.format('HH:mm') + '-' + tt.format('HH:mm'));
+          },
+          chgFunc: function () {
+            var ft = moment($scope.pops.fromDate);
+            var tt = moment($scope.pops.toDate);
+            console.log('TaskChange-Task:' + ft.format('HH:mm') + '-' + tt.format('HH:mm'));
+          },
+          delFunc: function () {
+            var ft = moment($scope.pops.fromDate);
+            var tt = moment($scope.pops.toDate);
+            console.log('TaskDel-Task:' + ft.format('HH:mm') + '-' + tt.format('HH:mm'));
+          }
+        };
+
+        // popoover作成
+        var createPopover = function (element, row, bolRegist, taskModel) {
+          // 作成済みならリターン
+          if ($scope.pops.instance !== undefined) {
+            return;
+          }
+          $scope.pops.addFlg = bolRegist;
+          if (bolRegist) {
+            var tmpStart = moment(new Date());
+            var tmpEnd;
+            console.log('tmpStart.minute()=' + tmpStart.minute());
+            tmpStart.minute(Math.floor(tmpStart.minute() / 15) * 15);
+            console.log('tmpStart.minute()=' + tmpStart.minute());
+            $scope.pops.fromDate = tmpStart;
+            tmpEnd = tmpStart.clone();
+            tmpEnd.add(1, 'h');
+            $scope.pops.toDate = tmpEnd;
+          }
+          else {
+            $scope.pops.fromDate = taskModel.from;
+            $scope.pops.toDate = taskModel.to;
+          }
+          $scope.pops.instance = $popover(element, {
+            animation: 'am-flip-x',
+            autoClose: true,
+            placement: 'right auto',
+            title: (bolRegist ? '作業時間登録' : '作業時間更新'),
+            content: 'OK',
+            templateUrl: 'template/P002_registration.html',
+            trigger: 'manual',
+            container: 'body',
+            onShow: function (e) {
+              console.log('show');
+              console.log(e);
+            },
+            onHide: function (e) {
+              console.log('hide');
+              console.log(e);
+              $scope.pops.instance = undefined;
+            }
+          });
+          // popover作成完了後に表示
+          $scope.pops.instance.$promise.then(function () {
+            $scope.pops.instance.show();
+            console.log($scope.pops.instance.$scope);
+            // popoverのスコープにパラメータを設定
+            $scope.pops.instance.$scope.pops = $scope.pops;
+          });
+          console.log(row.model.id);
+        };
+
         // Event handler
         var logDataEvent = function(eventName) {
             $log.info('[Event] ' + eventName);
@@ -45,7 +119,7 @@ angular.module('angularGanttDemoApp')
                 if ($scope.taskcheck.includes(task.model.id) === false) {
                   $scope.taskcheck.push(task.model.id);
                   task.$element.bind('contextmenu', function(e) {
-                      createPopover(angular.element(e.currentTarget), task.row);
+                      createPopover(angular.element(e.currentTarget), task.row, false, task.model);
                       return false;
                   });
                 }
@@ -116,42 +190,6 @@ angular.module('angularGanttDemoApp')
           console.log($(this));
         };
         */
-
-        $scope.pops = {
-          fromDate: new Date(2016, 11, 15, 8, 30, 0),
-          toDate: new Date(2016, 11, 15, 9, 30, 0),
-          addFunc: function () {
-            var ft = moment($scope.pops.fromDate);
-            var tt = moment($scope.pops.toDate);
-            console.log('TaskRegister-Row:' + ft.format('HH:mm') + '-' + tt.format('HH:mm'));
-          }
-        };
-        var createPopover = function (element, row) {
-          var pp = $popover(element, {
-            animation: 'am-flip-x',
-            autoClose: true,
-            placement: 'bottom left right',
-            title: '作業時間登録',
-            content: 'OK',
-            templateUrl: 'template/P002_registration.html',
-            trigger: 'manual',
-            container: 'body',
-            onShow: function (e) {
-              console.log('show');
-              console.log(e);
-            },
-            onHide: function (e) {
-              console.log('hide');
-              console.log(e);
-            }
-          });
-          pp.$promise.then(function () {
-            pp.show();
-            console.log(pp.$scope);
-            pp.$scope.pops = $scope.pops;
-          });
-          console.log(row.model.id);
-        };
 
         $scope.rowcheck = [];
         $scope.taskcheck = [];
@@ -258,7 +296,7 @@ angular.module('angularGanttDemoApp')
                           if ($scope.taskcheck.includes(newData.model.id) === false) {
                             $scope.taskcheck.push(newData.model.id);
                             newData.$element.bind('contextmenu', function(e) {
-                                createPopover(angular.element(e.currentTarget), newData.row);
+                                createPopover(angular.element(e.currentTarget), newData.row, false, newData.model);
                                 return false;
                             });
                           }
@@ -336,7 +374,7 @@ angular.module('angularGanttDemoApp')
                                 if ($scope.rowcheck.includes(directiveScope.row.model) === false) {
                                   $scope.rowcheck.push(directiveScope.row.model);
                                   element.bind('contextmenu', function(e) {
-                                      createPopover(angular.element(e.currentTarget), directiveScope.row);
+                                      createPopover(angular.element(e.currentTarget), directiveScope.row, true, undefined);
                                       return false;
                                   });
                                 }

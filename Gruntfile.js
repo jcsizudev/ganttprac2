@@ -76,7 +76,9 @@ module.exports = function (grunt) {
       },
       livereload: {
         options: {
-          open: {appName: 'chrome'},
+          //open: {appName: 'chrome'},
+          open: {appName: '/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome'},
+          //open: true,
           middleware: function (connect) {
             return [
               serveStatic('.tmp'),

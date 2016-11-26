@@ -40,9 +40,17 @@
           <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
           戻る
         </button>
-        <button id="idTaskBtnAdd" type="button" class="btn btn-md btn-success" ng-click="pops.addFunc(); $hide()">
+        <button id="idTaskBtnAdd" type="button" class="btn btn-md btn-success" ng-show="pops.addFlg" ng-click="pops.addFunc(); $hide()">
           <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
           新規追加
+        </button>
+        <button id="idTaskBtnAdd" type="button" class="btn btn-md btn-success" ng-show="!pops.addFlg" ng-click="pops.chgFunc(); $hide()">
+          <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
+          更新
+        </button>
+        <button id="idTaskBtnAdd" type="button" class="btn btn-md btn-danger" ng-show="!pops.addFlg" ng-click="pops.chgFunc(); $hide()">
+          <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+          削除
         </button>
       </div>
     </form>

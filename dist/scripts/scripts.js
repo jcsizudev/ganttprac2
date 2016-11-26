@@ -39,9 +39,17 @@ angular.module('angularGanttDemoApp', [
  * Controller of the angularGanttDemoApp
  */
 angular.module('angularGanttDemoApp')
-    .controller('MainCtrl', ['$scope', '$timeout', '$log', 'ganttUtils', 'GanttObjectModel', 'Sample', 'ganttMouseOffset', 'ganttDebounce', 'moment', '$modal', '$popover', function($scope, $timeout, $log, utils, ObjectModel, Sample, mouseOffset, debounce, moment, $modal, $popover) {
+    .controller('MainCtrl', [
+      '$scope', '$timeout', '$log', 'ganttUtils', 'GanttObjectModel',
+      'Sample', 'ganttMouseOffset', 'ganttDebounce', 'moment',
+      '$modal', '$popover', function(
+        $scope, $timeout, $log, utils, ObjectModel, Sample,
+        mouseOffset, debounce, moment,
+        $modal, $popover
+      ) {
         var objectModel;
         var dataToRemove;
+        var firstLoad = true;
 
         // Event handler
         var logScrollEvent = function(left, date, direction) {
@@ -58,9 +66,25 @@ angular.module('angularGanttDemoApp')
               $scope.collapseAll();
               $scope.api.tree.expand('1');
               //$('.gantt-scrollable').scrollLeft(480);
-              $('.gantt-table-content').attr('style', 'border-left: 2px solid #dddddd;');
-              $('.gantt-row-label-header').attr('style', 'border-left: 2px solid #dddddd;');
-              $('.gantt-tree-body').attr('style', 'border-left: 2px solid #dddddd;');
+              angular.element(document.getElementsByClassName('gantt-table-content')).attr('style', 'border-left: 2px solid #dddddd;');
+              angular.element(document.getElementsByClassName('gantt-row-label-header')).attr('style', 'border-left: 2px solid #dddddd;');
+              angular.element(document.getElementsByClassName('gantt-tree-body')).attr('style', 'border-left: 2px solid #dddddd;');
+              document.oncontextmenu = function() {
+                return false;
+              };
+              angular.forEach($scope.loadtask, function (task) {
+                if ($scope.taskcheck.includes(task.model.id) === false) {
+                  $scope.taskcheck.push(task.model.id);
+                  task.$element.bind('contextmenu', function(e) {
+                      createPopover(angular.element(e.currentTarget), task.row);
+                      return false;
+                  });
+                }
+
+                console.log(task);
+              });
+              firstLoad = false;
+              $scope.loadtask = [];
             }, 500);
         };
 
@@ -124,35 +148,45 @@ angular.module('angularGanttDemoApp')
         };
         */
 
-        $scope.popover = {
-          fromDate: '1970-01-01T09:30:40.000Z',
-          toDate: '1970-01-01T09:30:40.000Z',
+        $scope.pops = {
+          fromDate: new Date(2016, 11, 15, 8, 30, 0),
+          toDate: new Date(2016, 11, 15, 9, 30, 0),
           addFunc: function () {
-            console.log('OK!');
-          },
-          create: function (element, row) {
-            var pp = $popover(element, {
-              animation: 'am-flip-x',
-              autoClose: true,
-              title: '作業時間登録',
-              contentTemplate: 'template/P002_registration.html',
-              trigger: 'manual',
-              container: 'body',
-              onShow: function () {
-                console.log('PASS1');
-                //$('#idTaskBtnBack').each().bind('click', function () {
-                //  console.log('PASS2');
-                //});
-                $('#idTaskBtnBack').click(function (e) {
-                  console.log('PASS2');
-                });
-                //$('#idTaskBtnAdd').click($scope.onRegPopClickBack);
-              }
-            });
-            pp.show();
-            //console.log(pp);
+            var ft = moment($scope.pops.fromDate);
+            var tt = moment($scope.pops.toDate);
+            console.log('TaskRegister-Row:' + ft.format('HH:mm') + '-' + tt.format('HH:mm'));
           }
         };
+        var createPopover = function (element, row) {
+          var pp = $popover(element, {
+            animation: 'am-flip-x',
+            autoClose: true,
+            placement: 'bottom left right',
+            title: '作業時間登録',
+            content: 'OK',
+            templateUrl: 'template/P002_registration.html',
+            trigger: 'manual',
+            container: 'body',
+            onShow: function (e) {
+              console.log('show');
+              console.log(e);
+            },
+            onHide: function (e) {
+              console.log('hide');
+              console.log(e);
+            }
+          });
+          pp.$promise.then(function () {
+            pp.show();
+            console.log(pp.$scope);
+            pp.$scope.pops = $scope.pops;
+          });
+          console.log(row.model.id);
+        };
+
+        $scope.rowcheck = [];
+        $scope.taskcheck = [];
+        $scope.loadtask = [];
 
         // angular-gantt options
         $scope.options = {
@@ -204,16 +238,14 @@ angular.module('angularGanttDemoApp')
                 return {
                     id: utils.randomUuid(),  // Unique id of the task.
                     name: 'Drawn task', // Name shown on top of each task.
-                    color: '#AA8833' // Color of the task in HEX format (Optional).
+                    color: '#90EE90' // Color of the task in HEX format (Optional).
                 };
             },
             api: function(api) {
-                console.log('***API');
                 // API Object is used to control methods and events from angular-gantt.
                 $scope.api = api;
 
                 api.core.on.ready($scope, function() {
-                    console.log('***API_Ready');
                     // Log various events to console
                     api.scroll.on.scroll($scope, logScrollEvent);
                     api.core.on.ready($scope, logReadyEvent);
@@ -223,8 +255,25 @@ angular.module('angularGanttDemoApp')
                     api.data.on.clear($scope, addEventName('data.on.clear', logDataEvent));
                     api.data.on.change($scope, addEventName('data.on.change', logDataEvent));
 
-                    api.tasks.on.add($scope, addEventName('tasks.on.add', logTaskEvent));
-                    api.tasks.on.change($scope, addEventName('tasks.on.change', logTaskEvent));
+                    //api.tasks.on.add($scope, addEventName('tasks.on.add', logTaskEvent));
+                    api.tasks.on.add($scope, function (newData) {
+                      console.log('Add!');
+                      console.log(newData);
+                      if (firstLoad === true) {
+                        if (newData.row.model.drawTask === false) {
+                          // タスク追加できない行
+                        }
+                        else {
+                          $scope.loadtask.push(newData);
+                        }
+                      }
+                    });
+                    //api.tasks.on.change($scope, addEventName('tasks.on.change', logTaskEvent));
+                    api.tasks.on.change($scope, function (newData) {
+                      if (newData.model.name !== newData.row.model.name) {
+                          newData.model.name = newData.row.model.name;
+                      }
+                    });
                     api.tasks.on.rowChange($scope, addEventName('tasks.on.rowChange', logTaskEvent));
                     api.tasks.on.remove($scope, addEventName('tasks.on.remove', logTaskEvent));
 
@@ -235,7 +284,16 @@ angular.module('angularGanttDemoApp')
 
                         api.tasks.on.resizeBegin($scope, addEventName('tasks.on.resizeBegin', logTaskEvent));
                         //api.tasks.on.resize($scope, addEventName('tasks.on.resize', logTaskEvent));
-                        api.tasks.on.resizeEnd($scope, addEventName('tasks.on.resizeEnd', logTaskEvent));
+                        //api.tasks.on.resizeEnd($scope, addEventName('tasks.on.resizeEnd', logTaskEvent));
+                        api.tasks.on.resizeEnd($scope, function (newData) {
+                          if ($scope.taskcheck.includes(newData.model.id) === false) {
+                            $scope.taskcheck.push(newData.model.id);
+                            newData.$element.bind('contextmenu', function(e) {
+                                createPopover(angular.element(e.currentTarget), newData.row);
+                                return false;
+                            });
+                          }
+                        });
                     }
 
                     if (api.tasks.on.drawBegin) {
@@ -259,26 +317,8 @@ angular.module('angularGanttDemoApp')
                     api.rows.on.filter($scope, logRowsFilterEvent);
                     api.tasks.on.filter($scope, logTasksFilterEvent);
 
-                    api.data.on.change($scope, function(newData) {
-                        /*
-                        if (dataToRemove === undefined) {
-                            dataToRemove = [
-                                {'id': newData[2].id}, // Remove Kickoff row
-                                {
-                                    'id': newData[0].id, 'tasks': [
-                                    {'id': newData[0].tasks[0].id},
-                                    {'id': newData[0].tasks[3].id}
-                                ]
-                                }, // Remove some Milestones
-                                {
-                                    'id': newData[7].id, 'tasks': [
-                                    {'id': newData[7].tasks[0].id}
-                                ]
-                                } // Remove order basket from Sprint 2
-                            ];
-                        }
-                        */
-                        console.log(newData);
+                    api.data.on.change($scope, function() {
+                        //console.log(newData);
                     });
 
                     // When gantt is ready, load data.
@@ -313,76 +353,21 @@ angular.module('angularGanttDemoApp')
                                 $scope.$digest();
                             });
                         } else if (directiveName === 'ganttRowLabel') {
-                            if (directiveScope.row.model.id === '1') {
-                              console.log('pass-製造所');
-                              console.log(element);
-                              //console.log(element.click);
-                              console.log(jQuery._data($(element).get(0)));
-                              if (jQuery._data($(element).get(0)).hasOwnProperty('events')) {
-                                if (jQuery._data($(element).get(0)).events.hasOwnProperty('contextmenu')) {
-                                  console.log(jQuery._data($(element).get(0)).events.click);
-                                }
-                              }
-                              //var obj = jQuery._data($(element).get(0)).events;
-                              //console.log(obj.hasOwnProperty('click'));
-                              //console.log(jQuery._data($(element).get(0)).events.click);
-                            }
-
                             // clickイベント
-                            if (jQuery._data($(element).get(0)).hasOwnProperty('events')
-                              && jQuery._data($(element).get(0)).events.hasOwnProperty('click')) {
-                              // イベント設定済み
-                            }
-                            else {
-                              element.bind('click', function() {
-                                  logRowEvent('row-label-click', directiveScope.row, event);
-                              });
-                            }
-
-                            /*
-                            element.bind('contextmenu', function() {
-                                rowContextMenuClick('row-label-context', directiveScope.row);
-                                return false;
+                            element.bind('click', function(event) {
+                                event.stopPropagation();
+                                logRowEvent('row-label-click', directiveScope.row, event);
                             });
-                            */
-                            // contextmenuイベント
-                            if (jQuery._data($(element).get(0)).hasOwnProperty('events')
-                              && jQuery._data($(element).get(0)).events.hasOwnProperty('contextmenu')) {
-                              // イベント設定済み
-                            }
-                            else {
-                              if (element[0].nodeName === 'SPAN' && directiveScope.row && directiveScope.row.model) {
-                                if (directiveScope.row.model.drawTask === false) {
-                                  // タスク設定出来ない行
-                                  element.bind('contextmenu', function() {
-                                      return false;
-                                  });
-                                }
-                                else {
-                                  // ポップオーバー設定
-                                  /*
-                                  $popover(element, {
-                                    animation: 'am-flip-x',
-                                    autoClose: true,
-                                    title: '作業時間登録',
-                                    contentTemplate: 'template/P002_registration.html',
-                                    trigger: 'manual',
-                                    container: 'body',
-                                    onShow: function () {
-                                      console.log('PASS1');
-                                      //$('#idTaskBtnBack').each().bind('click', function () {
-                                      //  console.log('PASS2');
-                                      //});
-                                      $('#idTaskBtnBack').click(function (e) {
-                                        console.log('PASS2');
-                                      });
-                                      //$('#idTaskBtnAdd').click($scope.onRegPopClickBack);
-                                    }
-                                  });
-                                  */
+
+                            if (element[0].nodeName === 'SPAN' && directiveScope.row && directiveScope.row.model) {
+                              if (directiveScope.row.model.drawTask === false) {
+                                // タスク設定出来ない行
+                              }
+                              else {
+                                if ($scope.rowcheck.includes(directiveScope.row.model) === false) {
+                                  $scope.rowcheck.push(directiveScope.row.model);
                                   element.bind('contextmenu', function(e) {
-                                      console.log($(e.currentTarget));
-                                      $scope.popover.create($(e.currentTarget), directiveScope.row);
+                                      createPopover(angular.element(e.currentTarget), directiveScope.row);
                                       return false;
                                   });
                                 }
@@ -471,6 +456,7 @@ angular.module('angularGanttDemoApp')
             console.log('***Load');
             $scope.data = Sample.getSampleData();
             dataToRemove = undefined;
+            $scope.rowcheck = [];
 
             //$scope.timespans = Sample.getSampleTimespans();
         };
@@ -646,20 +632,20 @@ angular.module('angularGanttDemoApp')
                           {
                               id: '100',
                               name: '荷卸し',
-                              color: '#9FC5F8',
+                              color: '#90EE90',
                               from: new Date(2016, 11, 15, 8, 0, 0),
                               to: new Date(2016, 11, 15, 9, 0, 0),
                               workmin: 60,
-                              movable: false
                           }
                         ]},
                         {name: '入荷検品', id: '11', parent: '1', workmin: 90, tasks: [
                           {
                               id: '101',
                               name: '入荷検品',
-                              color: '#F1C232',
+                              color: '#90EE90',
                               from: new Date(2016, 11, 15, 9, 0, 0),
                               to: new Date(2016, 11, 15, 10, 30, 0),
+                              workmin: 30,
                           }
                         ]},
                         {name: '荷役（入荷）', id: '12', parent: '1', tasks: []},
