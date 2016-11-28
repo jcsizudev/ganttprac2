@@ -58,6 +58,87 @@ angular.module('angularGanttDemoApp')
             }
         };
 
+        // popoverパラメータ
+        $scope.pops = {
+          minDate: new Date(2016, 11, 15, 8, 0, 0),
+          maxDate: new Date(2016, 11, 16, 8, 0, 0),
+          fromDate: new Date(2016, 11, 15, 8, 30, 0),
+          toDate: new Date(2016, 11, 15, 9, 30, 0),
+          addFlg: true,
+          instance: undefined,
+          dayInfo: {
+            radio: "1"
+          },
+          addFunc: function () {
+            var ft = moment($scope.pops.fromDate);
+            var tt = moment($scope.pops.toDate);
+
+            console.log('TaskRegister-Row:' + ft.format('HH:mm') + '-' + tt.format('HH:mm'));
+          },
+          chgFunc: function () {
+            var ft = moment($scope.pops.fromDate);
+            var tt = moment($scope.pops.toDate);
+            console.log('TaskChange-Task:' + ft.format('HH:mm') + '-' + tt.format('HH:mm'));
+          },
+          delFunc: function () {
+            var ft = moment($scope.pops.fromDate);
+            var tt = moment($scope.pops.toDate);
+            console.log('TaskDel-Task:' + ft.format('HH:mm') + '-' + tt.format('HH:mm'));
+          }
+        };
+
+        // popoover作成
+        var createPopover = function (element, row, bolRegist, taskModel) {
+          // 作成済みならリターン
+          if ($scope.pops.instance !== undefined) {
+            return;
+          }
+          $scope.pops.addFlg = bolRegist;
+          if (bolRegist) {
+            var tmpStart = moment(new Date());
+            var tmpEnd;
+            console.log('tmpStart.minute()=' + tmpStart.minute());
+            tmpStart.minute(Math.floor(tmpStart.minute() / 15) * 15);
+            console.log('tmpStart.minute()=' + tmpStart.minute());
+            $scope.pops.fromDate = tmpStart;
+            tmpEnd = tmpStart.clone();
+            tmpEnd.add(1, 'h');
+            $scope.pops.toDate = tmpEnd;
+          }
+          else {
+            $scope.pops.fromDate = taskModel.from;
+            $scope.pops.toDate = taskModel.to;
+          }
+          $scope.pops.instance = $popover(element, {
+            animation: 'am-flip-x',
+            autoClose: true,
+            placement: 'right auto',
+            title: (bolRegist ? '作業時間登録' : '作業時間更新'),
+            content: 'OK',
+            templateUrl: 'template/P002_registration.html',
+            trigger: 'manual',
+            container: 'body',
+            maxWidth: "500px",
+            onShow: function (e) {
+              console.log('show');
+              console.log(e);
+            },
+            onHide: function (e) {
+              console.log('hide');
+              console.log(e);
+              $scope.pops.instance = undefined;
+            }
+          });
+          // popover作成完了後に表示
+          $scope.pops.instance.$promise.then(function () {
+            $scope.pops.instance.show();
+            console.log($scope.pops.instance.$scope);
+            // popoverのスコープにパラメータを設定
+            $scope.pops.instance.$scope.pops = $scope.pops;
+          });
+          console.log(row.model.id);
+        };
+
         // Event handler
         var logDataEvent = function(eventName) {
             $log.info('[Event] ' + eventName);
@@ -72,19 +153,7 @@ angular.module('angularGanttDemoApp')
               document.oncontextmenu = function() {
                 return false;
               };
-              angular.forEach($scope.loadtask, function (task) {
-                if ($scope.taskcheck.includes(task.model.id) === false) {
-                  $scope.taskcheck.push(task.model.id);
-                  task.$element.bind('contextmenu', function(e) {
-                      createPopover(angular.element(e.currentTarget), task.row);
-                      return false;
-                  });
-                }
-
-                console.log(task);
-              });
               firstLoad = false;
-              $scope.loadtask = [];
             }, 500);
         };
 
@@ -97,6 +166,8 @@ angular.module('angularGanttDemoApp')
         var logRowEvent = function(eventName, row, e) {
             $log.info('[Event] ' + eventName + ': ' + row.model.name);
             console.log(e);
+            //console.log(row.tasks[0].model.from);
+            //console.log(row.tasks[0].model.to);
         };
 
         // Event handler
@@ -148,45 +219,8 @@ angular.module('angularGanttDemoApp')
         };
         */
 
-        $scope.pops = {
-          fromDate: new Date(2016, 11, 15, 8, 30, 0),
-          toDate: new Date(2016, 11, 15, 9, 30, 0),
-          addFunc: function () {
-            var ft = moment($scope.pops.fromDate);
-            var tt = moment($scope.pops.toDate);
-            console.log('TaskRegister-Row:' + ft.format('HH:mm') + '-' + tt.format('HH:mm'));
-          }
-        };
-        var createPopover = function (element, row) {
-          var pp = $popover(element, {
-            animation: 'am-flip-x',
-            autoClose: true,
-            placement: 'bottom left right',
-            title: '作業時間登録',
-            content: 'OK',
-            templateUrl: 'template/P002_registration.html',
-            trigger: 'manual',
-            container: 'body',
-            onShow: function (e) {
-              console.log('show');
-              console.log(e);
-            },
-            onHide: function (e) {
-              console.log('hide');
-              console.log(e);
-            }
-          });
-          pp.$promise.then(function () {
-            pp.show();
-            console.log(pp.$scope);
-            pp.$scope.pops = $scope.pops;
-          });
-          console.log(row.model.id);
-        };
-
         $scope.rowcheck = [];
         $scope.taskcheck = [];
-        $scope.loadtask = [];
 
         // angular-gantt options
         $scope.options = {
@@ -255,19 +289,7 @@ angular.module('angularGanttDemoApp')
                     api.data.on.clear($scope, addEventName('data.on.clear', logDataEvent));
                     api.data.on.change($scope, addEventName('data.on.change', logDataEvent));
 
-                    //api.tasks.on.add($scope, addEventName('tasks.on.add', logTaskEvent));
-                    api.tasks.on.add($scope, function (newData) {
-                      console.log('Add!');
-                      console.log(newData);
-                      if (firstLoad === true) {
-                        if (newData.row.model.drawTask === false) {
-                          // タスク追加できない行
-                        }
-                        else {
-                          $scope.loadtask.push(newData);
-                        }
-                      }
-                    });
+                    api.tasks.on.add($scope, addEventName('tasks.on.add', logTaskEvent));
                     //api.tasks.on.change($scope, addEventName('tasks.on.change', logTaskEvent));
                     api.tasks.on.change($scope, function (newData) {
                       if (newData.model.name !== newData.row.model.name) {
@@ -285,14 +307,8 @@ angular.module('angularGanttDemoApp')
                         api.tasks.on.resizeBegin($scope, addEventName('tasks.on.resizeBegin', logTaskEvent));
                         //api.tasks.on.resize($scope, addEventName('tasks.on.resize', logTaskEvent));
                         //api.tasks.on.resizeEnd($scope, addEventName('tasks.on.resizeEnd', logTaskEvent));
-                        api.tasks.on.resizeEnd($scope, function (newData) {
-                          if ($scope.taskcheck.includes(newData.model.id) === false) {
-                            $scope.taskcheck.push(newData.model.id);
-                            newData.$element.bind('contextmenu', function(e) {
-                                createPopover(angular.element(e.currentTarget), newData.row);
-                                return false;
-                            });
-                          }
+                        api.tasks.on.resizeEnd($scope, function (newTask) {
+                          console.log('resizeEnd:newTask.model.from=' + newTask.model.from + ',newTask.model.to=' + newTask.model.to);
                         });
                     }
 
@@ -328,10 +344,18 @@ angular.module('angularGanttDemoApp')
                     // Add some DOM events
                     api.directives.on.new($scope, function(directiveName, directiveScope, element) {
                         if (directiveName === 'ganttTask') {
+
                             element.bind('click', function(event) {
                                 event.stopPropagation();
                                 logTaskEvent('task-click', directiveScope.task);
                             });
+
+                            // コンテキストメニュー設定
+                            element.bind('contextmenu', function() {
+                                createPopover(element, directiveScope.task.row, false, directiveScope.task.model);
+                                return false;
+                            });
+
                             element.bind('mousedown touchstart', function(event) {
                                 event.stopPropagation();
                                 $scope.live.row = directiveScope.task.row.model;
@@ -364,10 +388,12 @@ angular.module('angularGanttDemoApp')
                                 // タスク設定出来ない行
                               }
                               else {
+                                // コンテキストメニュー設定
                                 if ($scope.rowcheck.includes(directiveScope.row.model) === false) {
+                                  // コンテキストメニューの設定が済んでいない行を対象
                                   $scope.rowcheck.push(directiveScope.row.model);
                                   element.bind('contextmenu', function(e) {
-                                      createPopover(angular.element(e.currentTarget), directiveScope.row);
+                                      createPopover(angular.element(e.currentTarget), directiveScope.row, true, undefined);
                                       return false;
                                   });
                                 }
@@ -557,7 +583,8 @@ angular.module('angularGanttDemoApp')
                             rowModel.tasks.splice(i, 1);
                         } else {
                             objectModel.cleanTask(newTask);
-                            angular.extend(existingTask, newTask);
+                            //angular.extend(existingTask, newTask);
+                            angular.extend(newTask, existingTask);
                             delete newTasks[existingTask.id];
                         }
                     }

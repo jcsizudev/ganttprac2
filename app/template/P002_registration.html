@@ -9,14 +9,28 @@
               <span class="glyphicon glyphicon-time" aria-hidden="true"></span>
               開始時刻
             </div>
-            <input id="idTaskTimeFrom" type="text" class="form-control" size="8" value="18:00"
-              ng-model="pops.fromDate"
-              name="timeFrom"
-              bs-timepicker
-              data-time-format="HH:mm"
-              data-length="1"
-              data-minute-step="1"
-              data-arrow-behavior="picker" />
+            <table>
+              <tr>
+                <td>
+                  <input type="text" class="form-control" size="4"
+                    ng-model="pops.fromDate"
+                    name="timeFrom"
+                    data-autoclose="1"
+                    bs-timepicker
+                    data-time-format="HH:mm"
+                    data-length="1"
+                    data-minute-step="1"
+                    data-arrow-behavior="picker" />
+                </td>
+                <td>&nbsp;</td>
+                <td>
+                  <div class="btn-groupFrom" ng-model="pops.fromRadio" bs-radio-group>
+                    <label class="btn btn-default"><input type="radio" class="btn btn-default" value="0">当日</label>
+                    <label class="btn btn-default"><input type="radio" class="btn btn-default" value="1">翌日</label>
+                  </div>
+                </td>
+              </tr>
+            </table>
           </div>
           <br />
           <div class="input-group">
@@ -24,14 +38,28 @@
               <span class="glyphicon glyphicon-time" aria-hidden="true"></span>
               終了時刻
             </div>
-            <input id="idTaskTimeTo" type="text" class="form-control" size="8"
-              ng-model="pops.toDate"
-              name="timeTo"
-              bs-timepicker
-              data-time-format="HH:mm"
-              data-length="1"
-              data-minute-step="1"
-              data-arrow-behavior="picker" />
+            <table>
+              <tr>
+                <td>
+                  <input id="idTaskTimeTo" type="text" class="form-control" size="4"
+                    ng-model="pops.toDate"
+                    name="timeTo"
+                    bs-timepicker
+                    data-autoclose="1"
+                    data-time-format="HH:mm"
+                    data-length="1"
+                    data-minute-step="1"
+                    data-arrow-behavior="picker" />
+                </td>
+                <td>&nbsp;</td>
+                <td>
+                  <div class="btn-groupTo" ng-model="pops.toRadio" bs-radio-group>
+                    <label class="btn btn-default"><input type="radio" class="btn btn-default" value="0">当日</label>
+                    <label class="btn btn-default"><input type="radio" class="btn btn-default" value="1">翌日</label>
+                  </div>
+                </td>
+              </tr>
+            </table>
         </div>
       </div>
       <br />
@@ -48,7 +76,7 @@
           <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
           更新
         </button>
-        <button id="idTaskBtnAdd" type="button" class="btn btn-md btn-danger" ng-show="!pops.addFlg" ng-click="pops.chgFunc(); $hide()">
+        <button id="idTaskBtnAdd" type="button" class="btn btn-md btn-danger" ng-show="!pops.addFlg" ng-click="pops.delFunc(); $hide()">
           <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
           削除
         </button>
