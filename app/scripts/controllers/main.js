@@ -11,10 +11,10 @@ angular.module('angularGanttDemoApp')
     .controller('MainCtrl', [
       '$scope', '$timeout', '$log', 'ganttUtils', 'GanttObjectModel',
       'Sample', 'ganttMouseOffset', 'ganttDebounce', 'moment',
-      '$modal', '$popover', function(
+      '$modal', '$popover', 'TaskDateCheck', '$alert', function(
         $scope, $timeout, $log, utils, ObjectModel, Sample,
         mouseOffset, debounce, moment,
-        $modal, $popover
+        $modal, $popover, TaskDateCheck, $alert
       ) {
         var objectModel;
         var dataToRemove;
@@ -28,6 +28,27 @@ angular.module('angularGanttDemoApp')
             }
         };
 
+        $scope.rowcheck = [];   // 行イベント重複登録回避用
+        $scope.onDrawing = false;
+        $scope.mvTargetRow = undefined;
+        $scope.mvTargetPos = undefined;
+
+        // タスク操作
+        var deleteTask = function (row, task) {
+          TaskDateCheck.delCheckedTask(task.id);
+          for (var i = 0; i < row.model.tasks.length; i++) {
+            if (row.model.tasks[i].id === task.id) {
+              row.model.tasks.splice(i, 1);
+              break;
+            }
+          }
+        };
+
+        var resizeTask = function (task, from, to) {
+          task.from = from;
+          task.to = to;
+        };
+
         // popoverパラメータ
         $scope.pops = {
           fromDate: new Date(2016, 11, 15, 8, 30, 0),
@@ -38,20 +59,43 @@ angular.module('angularGanttDemoApp')
           instance: undefined,
           row: undefined,
           task: undefined,
-          addFunc: function () {
+          alert: function (message, container) {
+            $alert({
+              title: '',
+              content: message,
+              placement: 'top',
+              type: 'danger',
+              show: true,
+              container: container,
+              duration: 3
+            });
+          },
+          addFunc: function (close) {
             var ft = moment($scope.pops.fromDate);
             var tt = moment($scope.pops.toDate);
 
             ft.day($scope.pops.fromRadio === 0 ? targetDay.day() : targetDay.day() + 1);
             tt.day($scope.pops.toRadio === 0 ? targetDay.day() : targetDay.day() + 1);
 
+            var fromTo = TaskDateCheck.addCheckOnly(utils.randomUuid(), ft, tt);
+            if (fromTo === undefined) {
+              $scope.pops.alert('他のタスクと重なる日時が指定されました。', 'div.popover-message-area');
+              return;
+            }
+
             $scope.pops.row.model.tasks.push({
               'name': $scope.pops.row.model.name,
               'color': '#90EE90',
-              'from': ft,
-              'to': tt,
+              'from': fromTo.from,
+              'to': fromTo.to,
               'workmin': tt.diff(ft, 'm')
             });
+            $scope.pops.row.model.workmin = $scope.pops.row.model.workmin === undefined ? 0 : $scope.pops.row.model.workmin;
+            $scope.pops.row.model.workmin += tt.diff(ft, 'm');
+            console.log('add');
+            if (close === true) {
+              $scope.pops.instance.hide();
+            }
           },
           chgFunc: function () {
             var ft = moment($scope.pops.fromDate);
@@ -60,23 +104,18 @@ angular.module('angularGanttDemoApp')
             ft.day($scope.pops.fromRadio === 0 ? targetDay.day() : targetDay.day() + 1);
             tt.day($scope.pops.toRadio === 0 ? targetDay.day() : targetDay.day() + 1);
 
-            $scope.pops.task.from = ft;
-            $scope.pops.task.to = tt;
-
-            console.log('TaskChange-Task:' + ft.format('HH:mm') + '-' + tt.format('HH:mm'));
+            var fromTo = TaskDateCheck.chgCheckedTask($scope.pops.task.id, ft, tt);
+            if (fromTo === undefined) {
+              $scope.pops.alert('他のタスクと重なる日時が指定されました。', 'div.popover-message-area');
+            }
+            else {
+              resizeTask($scope.pops.task, ft, tt);
+              $scope.pops.instance.hide();
+            }
           },
           delFunc: function () {
-            /*
-            var ft = moment($scope.pops.fromDate);
-            var tt = moment($scope.pops.toDate);
-            console.log('TaskDel-Task:' + ft.format('HH:mm') + '-' + tt.format('HH:mm'));
-            */
-            for (var i = 0; i < $scope.pops.row.model.tasks.length; i++) {
-              if ($scope.pops.row.model.tasks[i].id == $scope.pops.task.id) {
-                $scope.pops.row.model.tasks.splice(i, 1);
-                break;
-              }
-            }
+            deleteTask($scope.pops.row, $scope.pops.task);
+            $scope.pops.instance.hide();
           }
         };
 
@@ -96,9 +135,7 @@ angular.module('angularGanttDemoApp')
             tmpStart.minute(tmpNow.minute());
             tmpStart.second(0);
 
-            console.log('tmpStart.minute()=' + tmpStart.minute());
             tmpStart.minute(Math.floor(tmpStart.minute() / 15) * 15);
-            console.log('tmpStart.minute()=' + tmpStart.minute());
             $scope.pops.fromDate = tmpStart;
             tmpEnd = tmpStart.clone();
             tmpEnd.add(1, 'h');
@@ -122,24 +159,21 @@ angular.module('angularGanttDemoApp')
             templateUrl: 'template/P002_registration.html',
             trigger: 'manual',
             container: 'body',
-            onShow: function (e) {
-              console.log('show');
-              console.log(e);
+            onShow: function () {
+              console.log('popover-show');
             },
-            onHide: function (e) {
-              console.log('hide');
-              console.log(e);
+            onHide: function () {
+              console.log('popover-hide');
               $scope.pops.instance = undefined;
             }
           });
           // popover作成完了後に表示
           $scope.pops.instance.$promise.then(function () {
             $scope.pops.instance.show();
-            console.log($scope.pops.instance.$scope);
             // popoverのスコープにパラメータを設定
             $scope.pops.instance.$scope.pops = $scope.pops;
+            console.log($scope.pops.instance);
           });
-          console.log(row.model.id);
         };
 
         // Event handler
@@ -165,12 +199,112 @@ angular.module('angularGanttDemoApp')
             $log.info('[Event] ' + eventName + ': ' + task.model.name);
         };
 
+        var taskAdd = function(eventName, task) {
+          $log.info('[Event] ' + eventName + ': ' + task.model.name);
+
+          // タスク描画中でない場合のみ追加
+          if ($scope.onDrawing === false) {
+            // 日時調整タスク追加
+            var fromTo = TaskDateCheck.addCheckedTask(task.model.id, task.model.from, task.model.to,
+              (task.model.planWork !== undefined),
+              (task.model.actualWork !== undefined)
+            );
+            if (fromTo === undefined) {
+              // 追加できない日時→削除
+              $timeout(function () {
+                deleteTask(task.row, task.model);
+              }, 200);
+            }
+            else {
+              // 調整済みの日時で追加
+              $timeout(function () {
+                resizeTask(task.model, fromTo.from, fromTo.to);
+              }, 200);
+            }
+          }
+        };
+
+        var taskDrawEnd = function(eventName, task) {
+            $log.info('[Event] ' + eventName + ': ' + task.model.name);
+
+            // 描画中フラグリセット
+            if ($scope.onDrawing === true) {
+              $scope.onDrawing = false;
+            }
+
+            // 日時調整タスク追加
+            var fromTo = TaskDateCheck.addCheckedTask(task.model.id, task.model.from, task.model.to,
+              (task.model.planWork !== undefined),
+              (task.model.actualWork !== undefined)
+            );
+            if (fromTo === undefined) {
+              // 追加できない日時→削除
+              deleteTask(task.row, task.model);
+            }
+            else {
+              // 調整済みの日時で追加
+              resizeTask(task.model, fromTo.from, fromTo.to);
+            }
+        };
+
+        var taskResizeEnd = function(eventName, task) {
+          $log.info('[Event] ' + eventName + ': ' + task.model.name);
+          var orgFromTo = TaskDateCheck.addCheckedTask(task.model.id);
+          var fromTo = TaskDateCheck.chgCheckedTask(task.model.id, task.model.from, task.model.to);
+          if (fromTo === undefined) {
+            if (orgFromTo !== undefined) {
+              resizeTask(task.model, orgFromTo.from, orgFromTo.to);
+            }
+            else {
+              deleteTask(task.row, task.model);
+            }
+          }
+          else {
+            resizeTask(task.model, fromTo.from, fromTo.to);
+          }
+        };
+
+        var taskMoveBegin = function(eventName, task) {
+          $log.info('[Event] ' + eventName + ': ' + task.model.name);
+          $scope.mvTargetRow = task.row;
+          $scope.mvTargetPos = TaskDateCheck.getCheckedTask(task.model.id);
+          console.log($scope.mvTargetRow);
+          console.log($scope.mvTargetPos);
+        };
+
+        var taskMoveEnd = function(eventName, task) {
+          $log.info('[Event] ' + eventName + ': ' + task.model.name);
+
+          var fromTo = TaskDateCheck.chgCheckedTask(task.model.id, task.model.from, task.model.to);
+          if (fromTo === undefined) {
+            if ($scope.mvTargetPos !== undefined) {
+              resizeTask(task.model, $scope.mvTargetPos.from, $scope.mvTargetPos.to);
+              $scope.mvTargetRow.moveTaskToRow(task);
+              console.log('移動不可-戻し');
+            }
+            else {
+              deleteTask(task.row, task.model);
+              console.log('移動不可-削除');
+            }
+          }
+          else {
+            resizeTask(task.model, fromTo.from, fromTo.to);
+            console.log('移動可');
+          }
+          $scope.mvTargetPos = undefined;
+          $scope.mvTargetRow = undefined;
+        };
+
+        var taskChange = function(eventName, task) {
+          $log.info('[Event] ' + eventName + ': ' + task.model.name);
+          if (task.model.name !== task.row.model.name) {
+              task.model.name = task.row.model.name;
+          }
+        };
+
         // Event handler
-        var logRowEvent = function(eventName, row, e) {
+        var logRowEvent = function(eventName, row) {
             $log.info('[Event] ' + eventName + ': ' + row.model.name);
-            console.log(e);
-            //console.log(row.tasks[0].model.from);
-            //console.log(row.tasks[0].model.to);
         };
 
         // Event handler
@@ -222,8 +356,6 @@ angular.module('angularGanttDemoApp')
         };
         */
 
-        $scope.rowcheck = [];
-        $scope.taskcheck = [];
 
         // angular-gantt options
         $scope.options = {
@@ -252,7 +384,7 @@ angular.module('angularGanttDemoApp')
             autoExpand: 'none',
             taskOutOfRange: 'truncate',
             fromDate: moment(new Date(2016, 11, 15, 8, 0, 0)),
-            toDate: moment(new Date(2016, 11, 16, 8, 0, 0)),
+            toDate: moment(new Date(2016, 11, 15, 23, 0, 0)),
             rowContent: '<i class="fa fa-align-justify"></i> {{row.model.name}}',
             taskContent : '<i class="fa fa-tasks"></i> {{task.model.name}}',
             allowSideResizing: true,
@@ -292,33 +424,38 @@ angular.module('angularGanttDemoApp')
                     api.data.on.clear($scope, addEventName('data.on.clear', logDataEvent));
                     api.data.on.change($scope, addEventName('data.on.change', logDataEvent));
 
-                    api.tasks.on.add($scope, addEventName('tasks.on.add', logTaskEvent));
+                    //api.tasks.on.add($scope, addEventName('tasks.on.add', logTaskEvent));
+                    api.tasks.on.add($scope, addEventName('tasks.on.add', taskAdd));
                     //api.tasks.on.change($scope, addEventName('tasks.on.change', logTaskEvent));
+                    api.tasks.on.change($scope, addEventName('tasks.on.change', taskChange));
+                    /*
                     api.tasks.on.change($scope, function (newData) {
                       if (newData.model.name !== newData.row.model.name) {
                           newData.model.name = newData.row.model.name;
                       }
                     });
+                    */
                     api.tasks.on.rowChange($scope, addEventName('tasks.on.rowChange', logTaskEvent));
                     api.tasks.on.remove($scope, addEventName('tasks.on.remove', logTaskEvent));
 
                     if (api.tasks.on.moveBegin) {
-                        api.tasks.on.moveBegin($scope, addEventName('tasks.on.moveBegin', logTaskEvent));
+                        //api.tasks.on.moveBegin($scope, addEventName('tasks.on.moveBegin', logTaskEvent));
+                        api.tasks.on.moveBegin($scope, addEventName('tasks.on.moveBegin', taskMoveBegin));
                         //api.tasks.on.move($scope, addEventName('tasks.on.move', logTaskEvent));
-                        api.tasks.on.moveEnd($scope, addEventName('tasks.on.moveEnd', logTaskEvent));
+                        //api.tasks.on.moveEnd($scope, addEventName('tasks.on.moveEnd', logTaskEvent));
+                        api.tasks.on.moveEnd($scope, addEventName('tasks.on.moveEnd', taskMoveEnd));
 
                         api.tasks.on.resizeBegin($scope, addEventName('tasks.on.resizeBegin', logTaskEvent));
                         //api.tasks.on.resize($scope, addEventName('tasks.on.resize', logTaskEvent));
                         //api.tasks.on.resizeEnd($scope, addEventName('tasks.on.resizeEnd', logTaskEvent));
-                        api.tasks.on.resizeEnd($scope, function (newTask) {
-                          console.log('resizeEnd:newTask.model.from=' + newTask.model.from + ',newTask.model.to=' + newTask.model.to);
-                        });
+                        api.tasks.on.resizeEnd($scope, addEventName('tasks.on.resizeEnd', taskResizeEnd));
                     }
 
                     if (api.tasks.on.drawBegin) {
                         api.tasks.on.drawBegin($scope, addEventName('tasks.on.drawBegin', logTaskEvent));
                         //api.tasks.on.draw($scope, addEventName('tasks.on.draw', logTaskEvent));
-                        api.tasks.on.drawEnd($scope, addEventName('tasks.on.drawEnd', logTaskEvent));
+                        //api.tasks.on.drawEnd($scope, addEventName('tasks.on.drawEnd', logTaskEvent));
+                        api.tasks.on.drawEnd($scope, addEventName('tasks.on.drawEnd', taskDrawEnd));
                     }
 
                     api.rows.on.add($scope, addEventName('rows.on.add', logRowEvent));
@@ -351,6 +488,7 @@ angular.module('angularGanttDemoApp')
                             element.bind('click', function(event) {
                                 event.stopPropagation();
                                 logTaskEvent('task-click', directiveScope.task);
+                                TaskDateCheck.dumpTask();
                             });
 
                             // コンテキストメニュー設定
@@ -361,29 +499,33 @@ angular.module('angularGanttDemoApp')
 
                             element.bind('mousedown touchstart', function(event) {
                                 event.stopPropagation();
+                                /*
                                 $scope.live.row = directiveScope.task.row.model;
                                 if (directiveScope.task.originalModel !== undefined) {
                                     $scope.live.task = directiveScope.task.originalModel;
                                 } else {
                                     $scope.live.task = directiveScope.task.model;
                                 }
+                                */
                                 $scope.$digest();
                             });
                         } else if (directiveName === 'ganttRow') {
                             element.bind('click', function(event) {
                                 event.stopPropagation();
-                                logRowEvent('row-click', directiveScope.row, event);
+                                logRowEvent('row-click', directiveScope.row);
                             });
                             element.bind('mousedown touchstart', function(event) {
+                                $scope.onDrawing = true;
                                 event.stopPropagation();
-                                $scope.live.row = directiveScope.row.model;
+                                //$scope.live.row = directiveScope.row.model;
+                                console.log('touch start!');
                                 $scope.$digest();
                             });
                         } else if (directiveName === 'ganttRowLabel') {
                             // clickイベント
                             element.bind('click', function(event) {
                                 event.stopPropagation();
-                                logRowEvent('row-label-click', directiveScope.row, event);
+                                logRowEvent('row-label-click', directiveScope.row);
                             });
 
                             if (element[0].nodeName === 'SPAN' && directiveScope.row && directiveScope.row.model) {
@@ -400,19 +542,22 @@ angular.module('angularGanttDemoApp')
                                       return false;
                                   });
                                 }
+                                else {
+                                  console.log('行重複パターン！');
+                                }
                               }
                             }
 
-                            element.bind('mousedown touchstart', function() {
-                                $scope.live.row = directiveScope.row.model;
-                                $scope.$digest();
-                            });
+                            //element.bind('mousedown touchstart', function() {
+                                //$scope.live.row = directiveScope.row.model;
+                                //$scope.$digest();
+                            //});
                         }
                     });
 
-                    api.tasks.on.rowChange($scope, function(task) {
-                        $scope.live.row = task.row.model;
-                    });
+                    //api.tasks.on.rowChange($scope, function() {
+                        //$scope.live.row = task.row.model;
+                    //});
 
                     objectModel = new ObjectModel(api);
                 });
@@ -505,122 +650,5 @@ angular.module('angularGanttDemoApp')
         $scope.clear = function() {
             $scope.data = [];
         };
-
-        // Add data to target row index
-        $scope.addOverlapTaskToTargetRowIndex = function() {
-            var targetDataAddRowIndex = parseInt($scope.options.targetDataAddRowIndex);
-
-            if (targetDataAddRowIndex) {
-                var targetRow = $scope.data[$scope.options.targetDataAddRowIndex];
-
-                if (targetRow && targetRow.tasks && targetRow.tasks.length > 0) {
-                    var firstTaskInRow = targetRow.tasks[0];
-                    var copiedColor = firstTaskInRow.color;
-                    var firstTaskEndDate = firstTaskInRow.to.toDate();
-                    var overlappingFromDate = new Date(firstTaskEndDate);
-
-                    overlappingFromDate.setDate(overlappingFromDate.getDate() - 1);
-
-                    var overlappingToDate = new Date(overlappingFromDate);
-
-                    overlappingToDate.setDate(overlappingToDate.getDate() + 7);
-
-                    targetRow.tasks.push({
-                        'name': 'Overlapping',
-                        'from': overlappingFromDate,
-                        'to': overlappingToDate,
-                        'color': copiedColor
-                    });
-                }
-            }
-        };
-
-
-        // Visual two way binding.
-        $scope.live = {};
-
-        var debounceValue = 1000;
-
-        var listenTaskJson = debounce(function(taskJson) {
-            if (taskJson !== undefined) {
-                var task = angular.fromJson(taskJson);
-                objectModel.cleanTask(task);
-                var model = $scope.live.task;
-                angular.extend(model, task);
-            }
-        }, debounceValue);
-        $scope.$watch('live.taskJson', listenTaskJson);
-
-        var listenRowJson = debounce(function(rowJson) {
-            if (rowJson !== undefined) {
-                console.log('pass-1');
-                var row = angular.fromJson(rowJson);
-                objectModel.cleanRow(row);
-                var tasks = row.tasks;
-                console.log(tasks);
-
-                delete row.tasks;
-                delete row.drawTask;
-
-                var rowModel = $scope.live.row;
-
-                angular.extend(rowModel, row);
-
-                var newTasks = {};
-                var i, l;
-
-                if (tasks !== undefined) {
-                    for (i = 0, l = tasks.length; i < l; i++) {
-                        objectModel.cleanTask(tasks[i]);
-                    }
-
-                    for (i = 0, l = tasks.length; i < l; i++) {
-                        newTasks[tasks[i].id] = tasks[i];
-                    }
-
-                    if (rowModel.tasks === undefined) {
-                        rowModel.tasks = [];
-                    }
-                    for (i = rowModel.tasks.length - 1; i >= 0; i--) {
-                        var existingTask = rowModel.tasks[i];
-                        var newTask = newTasks[existingTask.id];
-                        if (newTask === undefined) {
-                            console.log('undef=' + existingTask.id);
-                            rowModel.tasks.splice(i, 1);
-                        } else {
-                            console.log('exists=' + existingTask.id);
-                            objectModel.cleanTask(newTask);
-                            //angular.extend(existingTask, newTask);
-                            angular.extend(newTask, existingTask);
-                            delete newTasks[existingTask.id];
-                        }
-                    }
-                } else {
-                    delete rowModel.tasks;
-                }
-
-                angular.forEach(newTasks, function(newTask) {
-                    rowModel.tasks.push(newTask);
-                });
-            }
-        }, debounceValue);
-        $scope.$watch('live.rowJson', listenRowJson);
-
-        $scope.$watchCollection('live.task', function(task) {
-            $scope.live.taskJson = angular.toJson(task, true);
-            $scope.live.rowJson = angular.toJson($scope.live.row, true);
-        });
-
-        $scope.$watchCollection('live.row', function(row) {
-            $scope.live.rowJson = angular.toJson(row, true);
-            if (row !== undefined && row.tasks !== undefined && row.tasks.indexOf($scope.live.task) < 0) {
-                $scope.live.task = row.tasks[0];
-            }
-        });
-
-        $scope.$watchCollection('live.row.tasks', function() {
-            $scope.live.rowJson = angular.toJson($scope.live.row, true);
-        });
-
 
     }]);

@@ -4,6 +4,7 @@
   <div class="popover-content">
     <form name="popoverForm">
       <div clas="form-group">
+        <div class="popover-message-area"></div>
         <div class="input-group">
             <div class="input-group-addon">
               <span class="glyphicon glyphicon-time" aria-hidden="true"></span>
@@ -68,15 +69,20 @@
           <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
           戻る
         </button>
-        <button id="idTaskBtnAdd" type="button" class="btn btn-md btn-success" ng-show="pops.addFlg" ng-click="pops.addFunc(); $hide()">
+        <button id="idTaskBtnAdd" type="button" class="btn btn-md btn-success" ng-show="pops.addFlg" ng-click="pops.addFunc(true);">
           <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
           新規追加
         </button>
-        <button id="idTaskBtnAdd" type="button" class="btn btn-md btn-success" ng-show="!pops.addFlg" ng-click="pops.chgFunc(); $hide()">
+        <button id="idTaskBtnAdd" type="button" class="btn btn-md btn-success" ng-show="pops.addFlg" ng-click="pops.addFunc(false);">
+          <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+          <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+          連続追加
+        </button>
+        <button id="idTaskBtnAdd" type="button" class="btn btn-md btn-success" ng-show="!pops.addFlg" ng-click="pops.chgFunc();">
           <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
           更新
         </button>
-        <button id="idTaskBtnAdd" type="button" class="btn btn-md btn-danger" ng-show="!pops.addFlg" ng-click="pops.delFunc(); $hide()">
+        <button id="idTaskBtnAdd" type="button" class="btn btn-md btn-danger" ng-show="!pops.addFlg" ng-click="pops.delFunc();">
           <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
           削除
         </button>

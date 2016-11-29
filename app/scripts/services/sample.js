@@ -20,7 +20,8 @@ angular.module('angularGanttDemoApp')
                             color: '#B0B0B0',
                             from: new Date(2016, 11, 15, 9, 0, 0),
                             to: new Date(2016, 11, 15, 19, 0, 0),
-                            movable: false
+                            movable: false,
+                            planWork: true
                           }
                         ]},
                         {name: '就業実績', sortable: false, drawTask: false, color: '#E0FFFF', tasks: [
@@ -30,7 +31,8 @@ angular.module('angularGanttDemoApp')
                             color: '#6495ED',
                             from: new Date(2016, 11, 15, 8, 0, 0),
                             to: new Date(2016, 11, 15, 20, 30, 0),
-                            movable: false
+                            movable: false,
+                            actualWork: true
                           }
                         ]},
                         {name: '', id: '0', workmin: 150, drawTask: false, color: '#E0FFFF', tasks: []},
@@ -55,7 +57,7 @@ angular.module('angularGanttDemoApp')
                               workmin: 30,
                           }
                         ]},
-                        {name: '荷役（入荷）', id: '12', parent: '1', tasks: []},
+                        {name: '荷役（入荷）', id: '12', parent: '1', workmin: undefined, tasks: []},
                         {name: '出荷検品', id: '13', parent: '1', tasks: []},
                         {name: '荷役（出荷）', id: '14', parent: '1', tasks: []},
                         {name: '本倉庫', id: '2', drawTask: false, color: '#FFFAC2', tasks: []},
@@ -121,4 +123,170 @@ angular.module('angularGanttDemoApp')
             }
         };
     })
+    .service('TaskDateCheck', ['moment', function TaskDateCheck(moment) {
+      var taskList = [];
+
+      var adjustDate = function (id, from, to) {
+        var mfrom = moment.isMoment(from) ? from : moment(from);
+        var mto = moment.isMoment(to) ? to : moment(to);
+        var err = false;
+
+        // 他タスクとの重複や実績時間範囲外のチェックと調整
+        angular.forEach(taskList, function (task) {
+          if (task.actualWork === true) {
+            // 実績時間内かどうかのチェック
+            if (mfrom.isBefore(task.to) && mto.isAfter(task.from)) {
+              if (mfrom.isBefore(task.from) && mto.isAfter(task.from)) {
+                //左かけ
+                mfrom = task.from.clone();
+                console.log('実績-左かけ');
+              }
+              else if (mfrom.isBefore(task.to) && mto.isAfter(task.to)) {
+                //右かけ
+                mto = task.to.clone();
+                console.log('実績-右かけ');
+              }
+              else {
+                // 完全包含では調整不要
+                console.log('実績-包含');
+              }
+            }
+            else {
+              // 完全に実績時間外
+              console.log('実績-時間外');
+              err = true;
+            }
+          }
+          else if (id !== task.id && task.planWork === false) {
+            // 他タスクとの重複のチェック
+            if (mfrom.isBefore(task.to) && mto.isAfter(task.from)) {
+              if (mfrom.isBefore(task.from) && mto.isAfter(task.from)) {
+                //左かけ
+                mto = task.from.clone();
+                console.log('他タスク-左かけ');
+              }
+              else if (mfrom.isBefore(task.to) && mto.isAfter(task.to)) {
+                //右かけ
+                mfrom = task.to.clone();
+                console.log('他タスク-右かけ');
+              }
+              else {
+                //完全包含では調整不可
+                console.log('他タスク-包含');
+                err = true;
+              }
+            }
+            else {
+              // 他タスクと重なりなし
+              console.log('他タスク-重なりなし');
+            }
+          }
+          else {
+            //チェック対象外タスク
+            console.log('チェック対象外');
+          }
+        });
+
+        // エラー検出
+        if (err) {
+          return undefined;
+        }
+
+        return {
+          'from': mfrom,
+          'to': mto
+        };
+      };
+
+      return {
+        addCheckOnly: function(id, from, to) {
+          var fromTo = adjustDate(id, from, to);
+          if (fromTo !== undefined) {
+            return {
+              'from': fromTo.from.clone(),
+              'to': fromTo.to.clone()
+            };
+          }
+          return undefined;
+        },
+        addCheckedTask: function(id, from, to, planWork, actualWork) {
+          var fromTo = adjustDate(id, from, to);
+          if (fromTo !== undefined) {
+            console.log('チェック成功');
+            taskList.push({
+              'id': id,
+              'from': fromTo.from.clone(),
+              'to': fromTo.to.clone(),
+              'planWork': planWork,
+              'actualWork': actualWork
+            });
+            return {
+              'from': fromTo.from.clone(),
+              'to': fromTo.to.clone()
+            };
+          }
+          return undefined;
+        },
+        chgCheckedTask: function(id, from, to) {
+          var task;
+          var fromTo;
+
+          console.log('chgCheckedTask-start!');
+
+          // 対象タスク検索
+          for (var i = 0; i < taskList.length; i++) {
+            if (id === taskList[i].id) {
+              task = taskList[i];
+              break;
+            }
+          }
+
+          // 対象タスクが見つからない
+          if (task === undefined) {
+            return undefined;
+          }
+
+          fromTo = adjustDate(id, from, to);
+          if (fromTo !== undefined) {
+            console.log('チェック成功');
+            task.from = fromTo.from.clone();
+            task.to = fromTo.to.clone();
+          }
+          else {
+            return undefined;
+          }
+          return {
+            'from': task.from.clone(),
+            'to': task.to.clone()
+          };
+        },
+        delCheckedTask: function (id) {
+          // 対象タスク検索
+          for (var i = 0; i < taskList.length; i++) {
+            if (id === taskList[i].id) {
+              console.log('deleet-' + id);
+              taskList.splice(i, 1);
+              break;
+            }
+          }
+        },
+        getCheckedTask: function (id) {
+          // 対象タスク検索
+          for (var i = 0; i < taskList.length; i++) {
+            if (id === taskList[i].id) {
+              return {
+                'from': taskList[i].from.clone(),
+                'to': taskList[i].to.clone()
+              };
+            }
+          }
+          return undefined;
+        },
+        dumpTask: function () {
+          angular.forEach(taskList, function (task, i) {
+            console.log('TaskDateCheck-' + i + ':(id=' + task.id + ',from=' + task.from.format('HH:mm') + ',to=' + task.to.format('HH:mm') + ')');
+          });
+        }
+      };
+    }])
 ;
