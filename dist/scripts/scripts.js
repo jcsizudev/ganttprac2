@@ -119,6 +119,13 @@ angular.module('angularGanttDemoApp')
           tMinute: undefined,
           hours: getHourList(),
           minutes: getMinuteList(),
+          hourDropdown: [
+            {text: '0', href: '#', children: [{text: '00', href: '#'}]},
+            {text: '<i class="fa fa-globe"></i>&nbsp;Display an alert', click: '$alert("Holy guacamole!")'},
+            {text: '<i class="fa fa-external-link"></i>&nbsp;External link', href: '/auth/facebook', target: '_self'},
+            {divider: true},
+            {text: 'Separated link', href: '#separatedLink'}
+          ],
           alert: function (message, container) {
             $alert({
               title: '',

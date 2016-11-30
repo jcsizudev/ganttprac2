@@ -34,13 +34,13 @@ angular.module('angularGanttDemoApp')
         $scope.mvTargetPos = undefined;
 
         // 時間リスト
-        var hourList = [
-          '00','01','02','03','04','05','06','07','08','09',
-          '10','11','12','13','14','15','16','17','18','19',
-          '20','21','22','23','24','25','26','27','28','29',
-          '30','31','32','33','34','35','36'
-        ];
+        var hourList = [];
         var getHourList = function () {
+          if (hourList.length === 0) {
+            for (var i = 0; i < 37; i++) {
+              hourList.push({id: i + '', name: i + ''});
+            }
+          }
           return hourList;
         };
         var minuteList = [];
@@ -48,10 +48,10 @@ angular.module('angularGanttDemoApp')
           console.log(minuteList);
           if (minuteList.length === 0) {
             // マスタ設定による
-            minuteList.push('00');
-            minuteList.push('15');
-            minuteList.push('30');
-            minuteList.push('45');
+            minuteList.push({id: '0', name: '0'});
+            minuteList.push({id: '15', name: '15'});
+            minuteList.push({id: '30', name: '30'});
+            minuteList.push({id: '45', name: '45'});
           }
           return minuteList;
         };
