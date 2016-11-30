@@ -33,6 +33,29 @@ angular.module('angularGanttDemoApp')
         $scope.mvTargetRow = undefined;
         $scope.mvTargetPos = undefined;
 
+        // 時間リスト
+        var hourList = [
+          '00','01','02','03','04','05','06','07','08','09',
+          '10','11','12','13','14','15','16','17','18','19',
+          '20','21','22','23','24','25','26','27','28','29',
+          '30','31','32','33','34','35','36'
+        ];
+        var getHourList = function () {
+          return hourList;
+        };
+        var minuteList = [];
+        var getMinuteList = function () {
+          console.log(minuteList);
+          if (minuteList.length === 0) {
+            // マスタ設定による
+            minuteList.push('00');
+            minuteList.push('15');
+            minuteList.push('30');
+            minuteList.push('45');
+          }
+          return minuteList;
+        };
+
         // タスク操作
         var deleteTask = function (row, task) {
           TaskDateCheck.delCheckedTask(task.id);
@@ -59,6 +82,19 @@ angular.module('angularGanttDemoApp')
           instance: undefined,
           row: undefined,
           task: undefined,
+          fHour: undefined,
+          fMinute: undefined,
+          tHour: undefined,
+          tMinute: undefined,
+          hours: getHourList(),
+          minutes: getMinuteList(),
+          hourDropdown: [
+            {text: '0', href: '#', children: [{text: '00', href: '#'}]},
+            {text: '<i class="fa fa-globe"></i>&nbsp;Display an alert', click: '$alert("Holy guacamole!")'},
+            {text: '<i class="fa fa-external-link"></i>&nbsp;External link', href: '/auth/facebook', target: '_self'},
+            {divider: true},
+            {text: 'Separated link', href: '#separatedLink'}
+          ],
           alert: function (message, container) {
             $alert({
               title: '',
@@ -70,16 +106,48 @@ angular.module('angularGanttDemoApp')
               duration: 3
             });
           },
+          getCheckedDate: function (h, m) {
+            var hh = (h + '').match(/[0-9]?/) ? h - 0 : undefined;
+            var mm = (m + '').match(/[0-9]?/) ? m - 0 : undefined;
+            var tmpDay = targetDay.clone();
+
+            // 数値変換失敗
+            if (hh === undefined || mm === undefined) {
+              return undefined;
+            }
+
+            // 数値範囲外
+            if (hh < 0 || hh > 36 || mm < 0 || mm > 59) {
+              return undefined;
+            }
+
+            // 日付調整
+            if (hh > 23) {
+              tmpDay.add(1,'d');
+              hh -= 24;
+            }
+
+            // 返却日時作成
+            tmpDay.hour(hh);
+            tmpDay.minute(mm);
+
+            return tmpDay;
+          },
           addFunc: function (close) {
-            var ft = moment($scope.pops.fromDate);
-            var tt = moment($scope.pops.toDate);
+            var ft = $scope.pops.getCheckedDate($scope.pops.fHour, $scope.pops.fMinute);
+            var tt = $scope.pops.getCheckedDate($scope.pops.tHour, $scope.pops.tMinute);
+
+            if (ft === undefined || tt === undefined) {
+              $scope.pops.alert('時間は0～36、分は0～59を指定して下さい。', 'div.popover-message-area');
+              return;
+            }
 
             ft.day($scope.pops.fromRadio === 0 ? targetDay.day() : targetDay.day() + 1);
             tt.day($scope.pops.toRadio === 0 ? targetDay.day() : targetDay.day() + 1);
 
             var fromTo = TaskDateCheck.addCheckOnly(utils.randomUuid(), ft, tt);
             if (fromTo === undefined) {
-              $scope.pops.alert('他のタスクと重なる日時が指定されました。', 'div.popover-message-area');
+              $scope.pops.alert('就業時間外か、他のタスクと重なる日時が指定されました。', 'div.popover-message-area');
               return;
             }
 
@@ -98,8 +166,13 @@ angular.module('angularGanttDemoApp')
             }
           },
           chgFunc: function () {
-            var ft = moment($scope.pops.fromDate);
-            var tt = moment($scope.pops.toDate);
+            var ft = $scope.pops.getCheckedDate($scope.pops.fHour, $scope.pops.fMinute);
+            var tt = $scope.pops.getCheckedDate($scope.pops.tHour, $scope.pops.tMinute);
+
+            if (ft === undefined || tt === undefined) {
+              $scope.pops.alert('時間は0～36、分は0～59を指定して下さい。', 'div.popover-message-area');
+              return;
+            }
 
             ft.day($scope.pops.fromRadio === 0 ? targetDay.day() : targetDay.day() + 1);
             tt.day($scope.pops.toRadio === 0 ? targetDay.day() : targetDay.day() + 1);
@@ -127,25 +200,16 @@ angular.module('angularGanttDemoApp')
           }
           $scope.pops.addFlg = bolRegist;
           if (bolRegist) {
-            var tmpNow = moment(Date.Now);
-            var tmpStart = targetDay;
-            var tmpEnd;
-
-            tmpStart.hour(tmpNow.hour());
-            tmpStart.minute(tmpNow.minute());
-            tmpStart.second(0);
-
-            tmpStart.minute(Math.floor(tmpStart.minute() / 15) * 15);
-            $scope.pops.fromDate = tmpStart;
-            tmpEnd = tmpStart.clone();
-            tmpEnd.add(1, 'h');
-            $scope.pops.toDate = tmpEnd;
+            $scope.pops.fHour = undefined;
+            $scope.pops.fMinute = undefined;
+            $scope.pops.tHour = undefined;
+            $scope.pops.tMinute = undefined;
           }
           else {
-            $scope.pops.fromDate = taskModel.from;
-            $scope.pops.toDate = taskModel.to;
-            $scope.pops.fromRadio  = (taskModel.from.day() === targetDay.day()) ? 0 : 1;
-            $scope.pops.toRadio  = (taskModel.to.day() === targetDay.day()) ? 0 : 1;
+            $scope.pops.fHour = (taskModel.from.day() === targetDay.day()) ? taskModel.from.hour() : taskModel.from.hour() + 24;
+            $scope.pops.fMinute = taskModel.from.minute();
+            $scope.pops.tHour = (taskModel.to.day() === targetDay.day()) ? taskModel.to.hour() : taskModel.to.hour() + 24;
+            $scope.pops.tMinute = taskModel.to.minute();
           }
           $scope.pops.row = row;
           $scope.pops.task = taskModel;

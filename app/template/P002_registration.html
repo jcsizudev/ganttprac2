@@ -6,61 +6,59 @@
       <div clas="form-group">
         <div class="popover-message-area"></div>
         <div class="input-group">
-            <div class="input-group-addon">
-              <span class="glyphicon glyphicon-time" aria-hidden="true"></span>
-              開始時刻
-            </div>
-            <table>
-              <tr>
-                <td>
-                  <input type="text" class="form-control" size="4"
-                    ng-model="pops.fromDate"
-                    name="timeFrom"
-                    data-autoclose="1"
-                    bs-timepicker
-                    data-time-format="HH:mm"
-                    data-length="1"
-                    data-minute-step="1"
-                    data-arrow-behavior="picker" />
-                </td>
-                <td>&nbsp;</td>
-                <td>
-                  <div class="btn-groupFrom" ng-model="pops.fromRadio" bs-radio-group>
-                    <label class="btn btn-default"><input type="radio" class="btn btn-default" value="0">当日</label>
-                    <label class="btn btn-default"><input type="radio" class="btn btn-default" value="1">翌日</label>
-                  </div>
-                </td>
-              </tr>
-            </table>
+          <div class="input-group-addon">
+            <span class="glyphicon glyphicon-time" aria-hidden="true"></span>
+            開始時刻
           </div>
-          <br />
-          <div class="input-group">
-            <div class="input-group-addon">
-              <span class="glyphicon glyphicon-time" aria-hidden="true"></span>
-              終了時刻
-            </div>
-            <table>
-              <tr>
-                <td>
-                  <input id="idTaskTimeTo" type="text" class="form-control" size="4"
-                    ng-model="pops.toDate"
-                    name="timeTo"
-                    bs-timepicker
-                    data-autoclose="1"
-                    data-time-format="HH:mm"
-                    data-length="1"
-                    data-minute-step="1"
-                    data-arrow-behavior="picker" />
-                </td>
-                <td>&nbsp;</td>
-                <td>
-                  <div class="btn-groupTo" ng-model="pops.toRadio" bs-radio-group>
-                    <label class="btn btn-default"><input type="radio" class="btn btn-default" value="0">当日</label>
-                    <label class="btn btn-default"><input type="radio" class="btn btn-default" value="1">翌日</label>
-                  </div>
-                </td>
-              </tr>
-            </table>
+          <table>
+            <tr>
+              <td>
+                <input type="text" size="3" class="form-control" ng-model="pops.fHour"
+                  data-min-length="0"
+                  bs-options="hour for hour in pops.hours"
+                  placeholder="HH"
+                  limit="12"
+                  bs-typeahead />
+              </td>
+              <td>&nbsp;:&nbsp;</td>
+              <td>
+                <input type="text" size="3" class="form-control" ng-model="pops.fMinute"
+                  data-min-length="0"
+                  bs-options="minute for minute in pops.minutes"
+                  placeholder="mm"
+                  limit="12"
+                  bs-typeahead />
+              </td>
+            </tr>
+          </table>
+        </div>
+        <br />
+        <div class="input-group">
+          <div class="input-group-addon">
+            <span class="glyphicon glyphicon-time" aria-hidden="true"></span>
+            終了時刻
+          </div>
+          <table>
+            <tr>
+              <td>
+                <input type="text" size="3" class="form-control" ng-model="pops.tHour"
+                  data-min-length="0"
+                  bs-options="hour for hour in pops.hours"
+                  placeholder="HH"
+                  limit="12"
+                  bs-typeahead />
+              </td>
+              <td>&nbsp;:&nbsp;</td>
+              <td>
+                <input type="text" size="3" class="form-control" ng-model="pops.tMinute"
+                  data-min-length="0"
+                  bs-options="minute for minute in pops.minutes"
+                  placeholder="mm"
+                  limit="12"
+                  bs-typeahead />
+              </td>
+            </tr>
+          </table>
         </div>
       </div>
       <br />
