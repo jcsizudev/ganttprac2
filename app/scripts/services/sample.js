@@ -35,7 +35,7 @@ angular.module('angularGanttDemoApp')
                             actualWork: true
                           }
                         ]},
-                        {name: '', id: '0', workmin: 150, drawTask: false, color: '#E0FFFF', tasks: []},
+                        {name: '', id: '0', workmin: 150, drawTask: false, color: '#E0FFFF', workSummary: true, tasks: []},
                         {name: '製造所', id: '1', drawTask: false, color: '#FFFAC2', tasks: []},
                         {name: '荷卸し', id: '10', parent: '1', workmin: 60, tasks: [
                           {
@@ -127,9 +127,18 @@ angular.module('angularGanttDemoApp')
       var taskList = [];
 
       var adjustDate = function (id, from, to) {
-        var mfrom = moment.isMoment(from) ? from : moment(from);
-        var mto = moment.isMoment(to) ? to : moment(to);
+        var mfrom;
+        var mto;
         var err = false;
+
+        // パラメータチェック
+        if (from === undefined || to === undefined) {
+          return undefined;
+        }
+
+        // fromとtoの設定
+        mfrom = moment.isMoment(from) ? from : moment(from);
+        mto = moment.isMoment(to) ? to : moment(to);
 
         // 他タスクとの重複や実績時間範囲外のチェックと調整
         angular.forEach(taskList, function (task) {
@@ -198,41 +207,54 @@ angular.module('angularGanttDemoApp')
         };
       };
 
+      var logPrint = function () {
+        var message = arguments[0] + '(';
+        for (var i = 1; i < arguments.length; i++) {
+          if (i > 1) {
+            message += ',';
+          }
+          if (moment.isMoment(arguments[i])) {
+            message += arguments[i].format('HH:mm');
+          }
+          else {
+            message += arguments[i];
+          }
+        }
+        message += ')';
+        console.log(message);
+      };
+
       return {
-        addCheckOnly: function(id, from, to) {
-          var fromTo = adjustDate(id, from, to);
-          if (fromTo !== undefined) {
-            return {
-              'from': fromTo.from.clone(),
-              'to': fromTo.to.clone()
-            };
-          }
-          return undefined;
-        },
-        addCheckedTask: function(id, from, to, planWork, actualWork) {
-          var fromTo = adjustDate(id, from, to);
-          if (fromTo !== undefined) {
-            console.log('チェック成功');
-            taskList.push({
-              'id': id,
-              'from': fromTo.from.clone(),
-              'to': fromTo.to.clone(),
-              'planWork': planWork,
-              'actualWork': actualWork
-            });
-            return {
-              'from': fromTo.from.clone(),
-              'to': fromTo.to.clone()
-            };
-          }
-          return undefined;
-        },
-        chgCheckedTask: function(id, from, to) {
-          var task;
+        getAdjutedFromTo: function(id, from, to) {
           var fromTo;
 
-          console.log('chgCheckedTask-start!');
+          logPrint('TaskDateCheck.getAdjutedFromTo<-', id, from, to);
+          fromTo = adjustDate(id, from, to);
+          if (fromTo !== undefined) {
+            logPrint('TaskDateCheck.getAdjutedFromTo->', fromTo.from, fromTo.to);
+            return {
+              'from': fromTo.from.clone(),
+              'to': fromTo.to.clone()
+            };
+          }
+          logPrint('TaskDateCheck.getAdjutedFromTo->', 'undefined');
+          return undefined;
+        },
+        addTask: function(id, from, to, planWork, actualWork) {
+          //console.log('TaskDateCheck.addTask<-(' + id + ',' + from + ',' + to + ',' + planWork + ',' + actualWork + ')');
+          logPrint('TaskDateCheck.addTask<-', id, from, to, planWork, actualWork);
+          taskList.push({
+            'id': id,
+            'from': from,
+            'to': to,
+            'planWork': planWork,
+            'actualWork': actualWork
+          });
+        },
+        chgTask: function(id, from, to) {
+          var task;
 
+          logPrint('TaskDateCheck.chgTask<-', id, from, to);
           // 対象タスク検索
           for (var i = 0; i < taskList.length; i++) {
             if (id === taskList[i].id) {
@@ -243,43 +265,38 @@ angular.module('angularGanttDemoApp')
 
           // 対象タスクが見つからない
           if (task === undefined) {
-            return undefined;
+            logPrint('TaskDateCheck.chgTask->', 'undefined');
+            return;
           }
 
-          fromTo = adjustDate(id, from, to);
-          if (fromTo !== undefined) {
-            console.log('チェック成功');
-            task.from = fromTo.from.clone();
-            task.to = fromTo.to.clone();
-          }
-          else {
-            return undefined;
-          }
-          return {
-            'from': task.from.clone(),
-            'to': task.to.clone()
-          };
+          task.from = from;
+          task.to = to;
         },
-        delCheckedTask: function (id) {
+        delTask: function (id) {
+          logPrint('TaskDateCheck.delTask<-', id);
           // 対象タスク検索
           for (var i = 0; i < taskList.length; i++) {
             if (id === taskList[i].id) {
-              console.log('deleet-' + id);
+              logPrint('deleet->', id);
               taskList.splice(i, 1);
+              logPrint('TaskDateCheck.delTask->', 'deleted');
               break;
             }
           }
         },
-        getCheckedTask: function (id) {
+        getFromToById: function (id) {
+          logPrint('TaskDateCheck.getFromToById<-', id);
           // 対象タスク検索
           for (var i = 0; i < taskList.length; i++) {
             if (id === taskList[i].id) {
+              logPrint('TaskDateCheck.getFromToById->', taskList[i].from, taskList[i].to);
               return {
                 'from': taskList[i].from.clone(),
                 'to': taskList[i].to.clone()
               };
             }
           }
+          logPrint('TaskDateCheck.getFromToById->', 'undefined');
           return undefined;
         },
         dumpTask: function () {

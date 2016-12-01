@@ -18,7 +18,6 @@ angular.module('angularGanttDemoApp')
       ) {
         var objectModel;
         var dataToRemove;
-        var firstLoad = true;
         var targetDay = moment(new Date(2016, 11, 15, 11, 20, 0));
 
         // Event handler
@@ -32,6 +31,7 @@ angular.module('angularGanttDemoApp')
         $scope.onDrawing = false;
         $scope.mvTargetRow = undefined;
         $scope.mvTargetPos = undefined;
+        $scope.summaryRow = undefined;
 
         // 時間リスト
         var hourList = [];
@@ -58,7 +58,7 @@ angular.module('angularGanttDemoApp')
 
         // タスク操作
         var deleteTask = function (row, task) {
-          TaskDateCheck.delCheckedTask(task.id);
+          TaskDateCheck.delTask(task.id);
           for (var i = 0; i < row.model.tasks.length; i++) {
             if (row.model.tasks[i].id === task.id) {
               row.model.tasks.splice(i, 1);
@@ -88,13 +88,6 @@ angular.module('angularGanttDemoApp')
           tMinute: undefined,
           hours: getHourList(),
           minutes: getMinuteList(),
-          hourDropdown: [
-            {text: '0', href: '#', children: [{text: '00', href: '#'}]},
-            {text: '<i class="fa fa-globe"></i>&nbsp;Display an alert', click: '$alert("Holy guacamole!")'},
-            {text: '<i class="fa fa-external-link"></i>&nbsp;External link', href: '/auth/facebook', target: '_self'},
-            {divider: true},
-            {text: 'Separated link', href: '#separatedLink'}
-          ],
           alert: function (message, container) {
             $alert({
               title: '',
@@ -107,9 +100,18 @@ angular.module('angularGanttDemoApp')
             });
           },
           getCheckedDate: function (h, m) {
-            var hh = (h + '').match(/[0-9]?/) ? h - 0 : undefined;
-            var mm = (m + '').match(/[0-9]?/) ? m - 0 : undefined;
             var tmpDay = targetDay.clone();
+            var hh;
+            var mm;
+
+            // パラメータチェック
+            if (h === undefined || m === undefined || h.name === undefined || m.name === undefined) {
+              return undefined;
+            }
+
+            // 数値変換
+            hh = (h.name + '').match(/[0-9]?/) ? h.name - 0 : undefined;
+            mm = (m.name + '').match(/[0-9]?/) ? m.name - 0 : undefined;
 
             // 数値変換失敗
             if (hh === undefined || mm === undefined) {
@@ -133,34 +135,45 @@ angular.module('angularGanttDemoApp')
 
             return tmpDay;
           },
+          checkFromTo: function (ft, tt, chekedFromTo) {
+            if (ft === undefined || tt === undefined) {
+              $scope.pops.alert('時間は0～36、分は0～59を指定して下さい。', 'div.popover-message-area');
+              return false;
+            }
+
+            if (ft.isSameOrAfter(tt)) {
+              $scope.pops.alert('開始～終了範囲に誤りがあります。', 'div.popover-message-area');
+              return false;
+            }
+
+            if (chekedFromTo === undefined) {
+              $scope.pops.alert('就業時間外か、他のタスクと重なる日時が指定されました。', 'div.popover-message-area');
+              return false;
+            }
+            return true;
+          },
           addFunc: function (close) {
             var ft = $scope.pops.getCheckedDate($scope.pops.fHour, $scope.pops.fMinute);
             var tt = $scope.pops.getCheckedDate($scope.pops.tHour, $scope.pops.tMinute);
+            var uuid = utils.randomUuid();
 
-            if (ft === undefined || tt === undefined) {
-              $scope.pops.alert('時間は0～36、分は0～59を指定して下さい。', 'div.popover-message-area');
+            var fromTo = TaskDateCheck.getAdjutedFromTo(uuid, ft, tt);
+            if (!$scope.pops.checkFromTo(ft, tt, fromTo)) {
               return;
             }
 
-            ft.day($scope.pops.fromRadio === 0 ? targetDay.day() : targetDay.day() + 1);
-            tt.day($scope.pops.toRadio === 0 ? targetDay.day() : targetDay.day() + 1);
-
-            var fromTo = TaskDateCheck.addCheckOnly(utils.randomUuid(), ft, tt);
-            if (fromTo === undefined) {
-              $scope.pops.alert('就業時間外か、他のタスクと重なる日時が指定されました。', 'div.popover-message-area');
-              return;
-            }
-
+            TaskDateCheck.addTask(uuid, fromTo.from, fromTo.to);
             $scope.pops.row.model.tasks.push({
               'name': $scope.pops.row.model.name,
               'color': '#90EE90',
               'from': fromTo.from,
               'to': fromTo.to,
-              'workmin': tt.diff(ft, 'm')
+              'workmin': fromTo.to.diff(fromTo.from, 'm')
             });
             $scope.pops.row.model.workmin = $scope.pops.row.model.workmin === undefined ? 0 : $scope.pops.row.model.workmin;
-            $scope.pops.row.model.workmin += tt.diff(ft, 'm');
-            console.log('add');
+            $scope.pops.row.model.workmin += fromTo.to.diff(fromTo.from, 'm');
+            $scope.summaryRow.workmin += fromTo.to.diff(fromTo.from, 'm');
+
             if (close === true) {
               $scope.pops.instance.hide();
             }
@@ -169,22 +182,14 @@ angular.module('angularGanttDemoApp')
             var ft = $scope.pops.getCheckedDate($scope.pops.fHour, $scope.pops.fMinute);
             var tt = $scope.pops.getCheckedDate($scope.pops.tHour, $scope.pops.tMinute);
 
-            if (ft === undefined || tt === undefined) {
-              $scope.pops.alert('時間は0～36、分は0～59を指定して下さい。', 'div.popover-message-area');
+            var fromTo = TaskDateCheck.getAdjutedFromTo($scope.pops.task.id, ft, tt);
+            if (!$scope.pops.checkFromTo(ft, tt, fromTo)) {
               return;
             }
 
-            ft.day($scope.pops.fromRadio === 0 ? targetDay.day() : targetDay.day() + 1);
-            tt.day($scope.pops.toRadio === 0 ? targetDay.day() : targetDay.day() + 1);
-
-            var fromTo = TaskDateCheck.chgCheckedTask($scope.pops.task.id, ft, tt);
-            if (fromTo === undefined) {
-              $scope.pops.alert('他のタスクと重なる日時が指定されました。', 'div.popover-message-area');
-            }
-            else {
-              resizeTask($scope.pops.task, ft, tt);
-              $scope.pops.instance.hide();
-            }
+            TaskDateCheck.chgTask($scope.pops.task.id, fromTo.from, fromTo.to);
+            resizeTask($scope.pops.task, fromTo.from, fromTo.to);
+            $scope.pops.instance.hide();
           },
           delFunc: function () {
             deleteTask($scope.pops.row, $scope.pops.task);
@@ -206,10 +211,14 @@ angular.module('angularGanttDemoApp')
             $scope.pops.tMinute = undefined;
           }
           else {
-            $scope.pops.fHour = (taskModel.from.day() === targetDay.day()) ? taskModel.from.hour() : taskModel.from.hour() + 24;
-            $scope.pops.fMinute = taskModel.from.minute();
-            $scope.pops.tHour = (taskModel.to.day() === targetDay.day()) ? taskModel.to.hour() : taskModel.to.hour() + 24;
-            $scope.pops.tMinute = taskModel.to.minute();
+            var fh = (taskModel.from.day() === targetDay.day()) ? taskModel.from.hour() : taskModel.from.hour() + 24;
+            var fm = taskModel.from.minute();
+            var th = (taskModel.to.day() === targetDay.day()) ? taskModel.to.hour() : taskModel.to.hour() + 24;
+            var tm = taskModel.to.minute();
+            $scope.pops.fHour = {id: fh + '', name: fh + ''};
+            $scope.pops.fMinute = {id: fm + '', name: fm + ''};
+            $scope.pops.tHour = {id: th + '', name: th + ''};
+            $scope.pops.tMinute = {id: tm + '', name: tm + ''};
           }
           $scope.pops.row = row;
           $scope.pops.task = taskModel;
@@ -236,26 +245,31 @@ angular.module('angularGanttDemoApp')
             $scope.pops.instance.show();
             // popoverのスコープにパラメータを設定
             $scope.pops.instance.$scope.pops = $scope.pops;
-            console.log($scope.pops.instance);
           });
         };
 
         // Event handler
         var logDataEvent = function(eventName) {
             $log.info('[Event] ' + eventName);
-            //console.log('logDataEvent');
-            $timeout(function () {
-              $scope.collapseAll();
-              $scope.api.tree.expand('1');
-              //$('.gantt-scrollable').scrollLeft(480);
-              angular.element(document.getElementsByClassName('gantt-table-content')).attr('style', 'border-left: 2px solid #dddddd;');
-              angular.element(document.getElementsByClassName('gantt-row-label-header')).attr('style', 'border-left: 2px solid #dddddd;');
-              angular.element(document.getElementsByClassName('gantt-tree-body')).attr('style', 'border-left: 2px solid #dddddd;');
-              document.oncontextmenu = function() {
-                return false;
-              };
-              firstLoad = false;
-            }, 500);
+        };
+
+        // データロード後のイベント
+        var onDataLoadEvent = function(eventName) {
+          $log.info('[Event] ' + eventName);
+          $timeout(function () {
+            $scope.collapseAll(); // 全ノードを一旦畳む
+            $scope.api.tree.expand('1');  // 先頭ノードのみ開く
+            //$('.gantt-scrollable').scrollLeft(480);
+
+            // 表の罫線設定（作業時間左）
+            angular.element(document.getElementsByClassName('gantt-table-content')).attr('style', 'border-left: 2px solid #dddddd;');
+            angular.element(document.getElementsByClassName('gantt-row-label-header')).attr('style', 'border-left: 2px solid #dddddd;');
+            angular.element(document.getElementsByClassName('gantt-tree-body')).attr('style', 'border-left: 2px solid #dddddd;');
+            // コンテキストメニューは無効化
+            document.oncontextmenu = function() {
+              return false;
+            };
+          }, 500);
         };
 
         // Event handler
@@ -269,10 +283,9 @@ angular.module('angularGanttDemoApp')
           // タスク描画中でない場合のみ追加
           if ($scope.onDrawing === false) {
             // 日時調整タスク追加
-            var fromTo = TaskDateCheck.addCheckedTask(task.model.id, task.model.from, task.model.to,
-              (task.model.planWork !== undefined),
-              (task.model.actualWork !== undefined)
-            );
+            var planWork = (task.model.planWork !== undefined);
+            var actualWork = (task.model.actualWork !== undefined);
+            var fromTo = TaskDateCheck.getAdjutedFromTo(task.model.id, task.model.from, task.model.to);
             if (fromTo === undefined) {
               // 追加できない日時→削除
               $timeout(function () {
@@ -281,6 +294,7 @@ angular.module('angularGanttDemoApp')
             }
             else {
               // 調整済みの日時で追加
+              TaskDateCheck.addTask(task.model.id, task.model.from, task.model.to, planWork, actualWork);
               $timeout(function () {
                 resizeTask(task.model, fromTo.from, fromTo.to);
               }, 200);
@@ -297,24 +311,22 @@ angular.module('angularGanttDemoApp')
             }
 
             // 日時調整タスク追加
-            var fromTo = TaskDateCheck.addCheckedTask(task.model.id, task.model.from, task.model.to,
-              (task.model.planWork !== undefined),
-              (task.model.actualWork !== undefined)
-            );
+            var fromTo = TaskDateCheck.getAdjutedFromTo(task.model.id, task.model.from, task.model.to);
             if (fromTo === undefined) {
               // 追加できない日時→削除
               deleteTask(task.row, task.model);
             }
             else {
               // 調整済みの日時で追加
+              TaskDateCheck.chgTask(task.model.id, fromTo.from, fromTo.to);
               resizeTask(task.model, fromTo.from, fromTo.to);
             }
         };
 
         var taskResizeEnd = function(eventName, task) {
           $log.info('[Event] ' + eventName + ': ' + task.model.name);
-          var orgFromTo = TaskDateCheck.addCheckedTask(task.model.id);
-          var fromTo = TaskDateCheck.chgCheckedTask(task.model.id, task.model.from, task.model.to);
+          var orgFromTo = TaskDateCheck.getFromToById(task.model.id);
+          var fromTo = TaskDateCheck.getAdjutedFromTo(task.model.id, task.model.from, task.model.to);
           if (fromTo === undefined) {
             if (orgFromTo !== undefined) {
               resizeTask(task.model, orgFromTo.from, orgFromTo.to);
@@ -324,6 +336,7 @@ angular.module('angularGanttDemoApp')
             }
           }
           else {
+            TaskDateCheck.addTask(task.model.id, fromTo.from, fromTo.to, false, false);
             resizeTask(task.model, fromTo.from, fromTo.to);
           }
         };
@@ -331,7 +344,7 @@ angular.module('angularGanttDemoApp')
         var taskMoveBegin = function(eventName, task) {
           $log.info('[Event] ' + eventName + ': ' + task.model.name);
           $scope.mvTargetRow = task.row;
-          $scope.mvTargetPos = TaskDateCheck.getCheckedTask(task.model.id);
+          $scope.mvTargetPos = TaskDateCheck.getFromToById(task.model.id);
           console.log($scope.mvTargetRow);
           console.log($scope.mvTargetPos);
         };
@@ -339,7 +352,7 @@ angular.module('angularGanttDemoApp')
         var taskMoveEnd = function(eventName, task) {
           $log.info('[Event] ' + eventName + ': ' + task.model.name);
 
-          var fromTo = TaskDateCheck.chgCheckedTask(task.model.id, task.model.from, task.model.to);
+          var fromTo = TaskDateCheck.getAdjutedFromTo(task.model.id, task.model.from, task.model.to);
           if (fromTo === undefined) {
             if ($scope.mvTargetPos !== undefined) {
               resizeTask(task.model, $scope.mvTargetPos.from, $scope.mvTargetPos.to);
@@ -352,6 +365,7 @@ angular.module('angularGanttDemoApp')
             }
           }
           else {
+            TaskDateCheck.chgTask(task.model.id, fromTo.from, fromTo.to);
             resizeTask(task.model, fromTo.from, fromTo.to);
             console.log('移動可');
           }
@@ -369,6 +383,15 @@ angular.module('angularGanttDemoApp')
         // Event handler
         var logRowEvent = function(eventName, row) {
             $log.info('[Event] ' + eventName + ': ' + row.model.name);
+        };
+
+        //
+        var onRowAdd = function(eventName, row) {
+            $log.info('[Event] ' + eventName + ': ' + row.model.name);
+            if (row.model.workSummary !== undefined) {
+              console.log('summaryRow-set');
+              $scope.summaryRow = row.model;
+            }
         };
 
         // Event handler
@@ -484,7 +507,8 @@ angular.module('angularGanttDemoApp')
                     api.core.on.ready($scope, logReadyEvent);
 
                     api.data.on.remove($scope, addEventName('data.on.remove', logDataEvent));
-                    api.data.on.load($scope, addEventName('data.on.load', logDataEvent));
+                    //api.data.on.load($scope, addEventName('data.on.load', logDataEvent));
+                    api.data.on.load($scope, addEventName('data.on.load', onDataLoadEvent));
                     api.data.on.clear($scope, addEventName('data.on.clear', logDataEvent));
                     api.data.on.change($scope, addEventName('data.on.change', logDataEvent));
 
@@ -522,7 +546,8 @@ angular.module('angularGanttDemoApp')
                         api.tasks.on.drawEnd($scope, addEventName('tasks.on.drawEnd', taskDrawEnd));
                     }
 
-                    api.rows.on.add($scope, addEventName('rows.on.add', logRowEvent));
+                    //api.rows.on.add($scope, addEventName('rows.on.add', logRowEvent));
+                    api.rows.on.add($scope, addEventName('rows.on.add', onRowAdd));
                     api.rows.on.change($scope, addEventName('rows.on.change', logRowEvent));
                     api.rows.on.move($scope, addEventName('rows.on.move', logRowEvent));
                     api.rows.on.remove($scope, addEventName('rows.on.remove', logRowEvent));

@@ -12,16 +12,6 @@
           </div>
           <table>
             <tr>
-              <!--
-              <td>
-                <input type="text" size="3" class="form-control" ng-model="pops.fHour"
-                  data-min-length="0"
-                  bs-options="hour for hour in pops.hours"
-                  placeholder="HH"
-                  limit="12"
-                  bs-typeahead />
-              </td>
-            -->
               <td>
                 <ui-select ng-model="pops.fHour" theme="bootstrap" style="min-width: 60px;">
                     <ui-select-match placeholder="HH">
@@ -55,21 +45,25 @@
           <table>
             <tr>
               <td>
-                <input type="text" size="3" class="form-control" ng-model="pops.tHour"
-                  data-min-length="0"
-                  bs-options="hour for hour in pops.hours"
-                  placeholder="HH"
-                  limit="12"
-                  bs-typeahead />
+                <ui-select ng-model="pops.tHour" theme="bootstrap" style="min-width: 60px;">
+                    <ui-select-match placeholder="HH">
+                        <span ng-bind="$select.selected.name"></span>
+                    </ui-select-match>
+                    <ui-select-choices repeat="item in (pops.hours | filter: $select.search) track by item.id">
+                        <span ng-bind="item.name"></span>
+                    </ui-select-choices>
+                </ui-select>
               </td>
               <td>&nbsp;:&nbsp;</td>
               <td>
-                <input type="text" size="3" class="form-control" ng-model="pops.tMinute"
-                  data-min-length="0"
-                  bs-options="minute for minute in pops.minutes"
-                  placeholder="mm"
-                  limit="12"
-                  bs-typeahead />
+                <ui-select ng-model="pops.tMinute" theme="bootstrap" style="min-width: 60px;">
+                    <ui-select-match placeholder="mm">
+                        <span ng-bind="$select.selected.name"></span>
+                    </ui-select-match>
+                    <ui-select-choices repeat="item in (pops.minutes | filter: $select.search) track by item.id">
+                        <span ng-bind="item.name"></span>
+                    </ui-select-choices>
+                </ui-select>
               </td>
             </tr>
           </table>
