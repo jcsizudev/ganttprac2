@@ -358,7 +358,7 @@ angular.module('angularGanttDemoApp')
 
           // タスク描画中でない場合のみ追加
           if ($scope.onDrawing === false) {
-            console.log('-描画中でない')
+            console.log('-描画中でない');
             // 日時調整タスク追加
             var planWork = (task.model.planWork !== undefined);
             var actualWork = (task.model.actualWork !== undefined);
@@ -376,7 +376,7 @@ angular.module('angularGanttDemoApp')
             }
           }
           else {
-            console.log('-描画中')
+            console.log('-描画中');
           }
         };
 
@@ -835,5 +835,75 @@ angular.module('angularGanttDemoApp')
         $scope.clear = function() {
             $scope.data = [];
         };
+
+        // パターンモーダルダイアログ
+        var getPatternData = function () {
+          return [
+            {
+              'title': '標準',
+              'content': '標準パターン',
+              'lastAccess': '2016/11/02'
+            },
+            {
+              'title': '月曜',
+              'content': '月曜日パターン',
+              'lastAccess': undefined
+            },
+            {
+              'title': '火曜',
+              'content': '火曜日パターン',
+              'lastAccess': undefined
+            },
+            {
+              'title': '水曜',
+              'content': '水曜日パターン',
+              'lastAccess': '2016/11/05'
+            },
+            {
+              'title': '木曜',
+              'content': '木曜日パターン',
+              'lastAccess': '2016/11/22'
+            },
+            {
+              'title': '金曜',
+              'content': '金曜日パターン',
+              'lastAccess': undefined
+            },
+            {
+              'title': '土曜',
+              'content': '土曜日パターン',
+              'lastAccess': undefined
+            },
+            {
+              'title': '日曜',
+              'content': '日曜日パターン',
+              'lastAccess': undefined
+            }
+          ];
+        };
+
+        $scope.patternModal = {
+          tabs: getPatternData(),
+          'instance': undefined,
+          activePattern: undefined,
+          activeLastAccess: undefined,
+          isActive: function (title) {
+            return $scope.patternModal.activePattern === title ? true : false;
+          },
+          setActive: function (title, lastAccess) {
+            $scope.patternModal.activePattern = title;
+            $scope.patternModal.activeLastAccess = lastAccess;
+          }
+        };
+        $scope.patternModal.instance = $modal({
+          animation: 'am-fade-and-slide-top',
+          title: '基本パターン登録',
+          templateUrl: 'template/P002_pattern.html',
+          show: false
+        });
+        $scope.patternModal.instance.$promise.then(function () {
+          $scope.patternModal.instance.$scope.patternModal = $scope.patternModal;
+        });
+
 
     }]);
