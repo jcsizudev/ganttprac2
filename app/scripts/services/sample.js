@@ -19,7 +19,7 @@ angular.module('angularGanttDemoApp')
                             name: '',
                             color: '#B0B0B0',
                             from: new Date(2016, 11, 15, 9, 0, 0),
-                            to: new Date(2016, 11, 15, 19, 0, 0),
+                            to: new Date(2016, 11, 15, 17, 0, 0),
                             movable: false,
                             planWork: true
                           }
@@ -30,7 +30,7 @@ angular.module('angularGanttDemoApp')
                             name: '',
                             color: '#6495ED',
                             from: new Date(2016, 11, 15, 8, 0, 0),
-                            to: new Date(2016, 11, 15, 20, 30, 0),
+                            to: new Date(2016, 11, 16, 11, 0, 0),
                             movable: false,
                             actualWork: true
                           }
@@ -54,7 +54,7 @@ angular.module('angularGanttDemoApp')
                               color: '#90EE90',
                               from: new Date(2016, 11, 15, 9, 0, 0),
                               to: new Date(2016, 11, 15, 10, 30, 0),
-                              workmin: 30,
+                              workmin: 90,
                           }
                         ]},
                         {name: '荷役（入荷）', id: '12', parent: '1', workmin: undefined, tasks: []},
@@ -269,6 +269,7 @@ angular.module('angularGanttDemoApp')
             return;
           }
 
+          logPrint('TaskDateCheck.chgTask->', id, from, to);
           task.from = from;
           task.to = to;
         },
