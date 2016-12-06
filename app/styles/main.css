@@ -71,3 +71,11 @@ textarea.live-row {
   outline: 0;
   border: 0;
 }
+
+.dialogLinePad {
+  height: 5px;
+}
+
+.tableRowSelect {
+  background-color: #FFFAC2;
+}

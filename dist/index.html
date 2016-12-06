@@ -60,11 +60,11 @@
                                   <td><strong>グループ</strong>：ＫＣカートＧその他</td>
                                   <td><strong>作業者</strong>：741047_後藤　悠哉</td>
                                   <td style="text-align: right;">
-                                    <button type="button" class="btn btn-md btn-primary" >
+                                    <button type="button" class="btn btn-md btn-primary" ng-click="workerModal.instance.show();">
                                       <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
                                       <strong>作業者選択</strong>
                                     </button>
-                                    <button type="button" class="btn btn-md btn-primary" >
+                                    <button type="button" class="btn btn-md btn-primary" ng-click="patternModal.instance.show();">
                                       <span class="glyphicon glyphicon-book" aria-hidden="true"></span>
                                       <strong>基本パターン登録</strong>
                                     </button>
@@ -95,7 +95,7 @@
                                          current-date-value="options.currentDateValue"
                                          headers="options.width && options.shortHeaders || options.longHeaders"
                                          headers-formats="headersFormats"
-                                         max-height="options.maxHeight && 600 || 0"
+                                         max-height="options.maxHeight && 400 || 0"
                                          api="options.api"
                                          column-magnet="options.columnMagnet">
                                         <gantt-tree enabled="options.sideMode === 'Tree' || options.sideMode === 'TreeTable'"
@@ -112,7 +112,7 @@
                                                      header-contents="options.columnsHeaderContents">
                                         </gantt-table>
                                         <gantt-groups enabled="options.groupDisplayMode === 'group' || options.groupDisplayMode === 'overview' || options.groupDisplayMode === 'promote'" display="options.groupDisplayMode"></gantt-groups>
-                                        <gantt-tooltips></gantt-tooltips>
+                                        <gantt-tooltips date-format="options.toolTipFormat"></gantt-tooltips>
                                         <gantt-bounds></gantt-bounds>
                                         <gantt-progress></gantt-progress>
                                         <gantt-sortable></gantt-sortable>

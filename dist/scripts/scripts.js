@@ -51,7 +51,19 @@ angular.module('angularGanttDemoApp')
       ) {
         var objectModel;
         var dataToRemove;
-        var targetDay = moment(new Date(2016, 11, 15, 11, 20, 0));
+        var targetDay = moment(new Date(2016, 11, 15, 11, 20, 0));  // 対象日
+        var targetFrom = moment(new Date(2016, 11, 15, 8, 0, 0));   // 対象日開始
+        var targetTo = moment(new Date(2016, 11, 16, 12, 0, 0)); // 対象日終了
+        var ganttScale = 15;  // '10 minutes'/'15 minutes'のみ
+        var ganttMagnet = 15;
+
+        var getGanttScale = function () {
+          return ganttScale + ' ' + (ganttScale > 1 ? 'minutes' : 'minute');
+        };
+
+        var getGanttMagnet = function () {
+          return ganttMagnet + ' ' + (ganttMagnet > 1 ? 'minutes' : 'minute');
+        };
 
         // Event handler
         var logScrollEvent = function(left, date, direction) {
@@ -79,13 +91,12 @@ angular.module('angularGanttDemoApp')
         // タスク編集画面用分リスト
         var minuteList = [];
         var getMinuteList = function () {
-          console.log(minuteList);
           if (minuteList.length === 0) {
             // マスタ設定による
-            minuteList.push({id: '0', name: '0'});
-            minuteList.push({id: '15', name: '15'});
-            minuteList.push({id: '30', name: '30'});
-            minuteList.push({id: '45', name: '45'});
+            var l = 60 / ganttMagnet;
+            for (var i = 0; i < l; i++) {
+              minuteList.push({id: (ganttMagnet * i) + '', name: (ganttMagnet * i) + ''});
+            }
           }
           return minuteList;
         };
@@ -116,7 +127,9 @@ angular.module('angularGanttDemoApp')
             if (row.model.tasks[i].id === task.id) {
               var workMin = task.workmin;
               // タスク時間を削除
-              setWorkMinutes(row, workMin, 0);
+              if (workMin !== undefined) {
+                setWorkMinutes(row, workMin, 0);
+              }
               //画面データからタスクを削除
               row.model.tasks.splice(i, 1);
               break;
@@ -345,6 +358,7 @@ angular.module('angularGanttDemoApp')
         var onDataLoadEvent = function(eventName) {
           $log.info('[Event] ' + eventName);
           $timeout(function () {
+            $scope.options.maxHeight = true;
             $scope.collapseAll(); // 全ノードを一旦畳む
             $scope.api.tree.expand('1');  // 先頭ノードのみ開く※パラメータによる
             //$('.gantt-scrollable').scrollLeft(480);
@@ -377,7 +391,7 @@ angular.module('angularGanttDemoApp')
 
           // タスク描画中でない場合のみ追加
           if ($scope.onDrawing === false) {
-            console.log('-描画中でない')
+            console.log('-描画中でない');
             // 日時調整タスク追加
             var planWork = (task.model.planWork !== undefined);
             var actualWork = (task.model.actualWork !== undefined);
@@ -395,7 +409,7 @@ angular.module('angularGanttDemoApp')
             }
           }
           else {
-            console.log('-描画中')
+            console.log('-描画中');
           }
         };
 
@@ -548,12 +562,13 @@ angular.module('angularGanttDemoApp')
         // angular-gantt options
         $scope.options = {
             mode: 'custom',
-            scale: '1 hour',
+            scale: getGanttScale(),
             sortMode: undefined,
             sideMode: 'TreeTable',
             daily: false,
             maxHeight: false,
-            width: false,
+            width: true,
+            shortHeaders: ['day','hour'],
             zoom: 1,
             columns: ['model.name', 'workmin'],
             treeTableColumns: ['workmin'],
@@ -571,8 +586,8 @@ angular.module('angularGanttDemoApp')
             },
             autoExpand: 'none',
             taskOutOfRange: 'truncate',
-            fromDate: moment(new Date(2016, 11, 15, 8, 0, 0)),
-            toDate: moment(new Date(2016, 11, 15, 23, 0, 0)),
+            fromDate: targetFrom,
+            toDate: targetTo,
             rowContent: '<i class="fa fa-align-justify"></i> {{row.model.name}}',
             taskContent : '<i class="fa fa-tasks"></i> {{task.model.name}}',
             allowSideResizing: false,
@@ -584,9 +599,10 @@ angular.module('angularGanttDemoApp')
             groupDisplayMode: 'none',//'group',
             filterTask: '',
             filterRow: '',
-            columnMagnet: '15 minutes',
+            columnMagnet: getGanttMagnet(),
             dependencies: false,
             targetDataAddRowIndex: 4,
+            toolTipFormat: 'HH:mm',
             canDraw: function(event) {
                 var isLeftMouseButton = event.button === 0 || event.button === 1;
                 return $scope.options.draw && !$scope.options.readOnly && isLeftMouseButton;
@@ -754,9 +770,21 @@ angular.module('angularGanttDemoApp')
             }
         };
 
+        $scope.headersScales = {
+          day: 'day',
+          hour: 'hour'
+        };
         $scope.headersFormats = {
-          hour: 'HH:mm',
-          day: 'MM月DD日'
+          day: 'YYYY年MM月DD日',
+          hour: function (column) {
+            var lastHH = targetTo.day() === targetDay.day() ? targetTo.hour() : targetTo.hour() + 24;
+            if (targetDay.day() === column.date.day()) {
+              return column.date.format('HH:mm');
+            }
+            var hh = column.date.hour() + 24;
+            var mm = column.date.minute();
+            return (hh === lastHH && targetTo.minute() === 0) ? hh + '' : ('0' + hh).slice(-2) + ':' + ('0' + mm).slice(-2);
+          }
         };
 
         $scope.handleTaskIconClick = function(taskModel) {
@@ -812,7 +840,7 @@ angular.module('angularGanttDemoApp')
                 return 800 * zoom;
             }
 
-            return 60 * zoom;
+            return 30 * zoom;
         };
 
         // Reload data action
@@ -841,6 +869,94 @@ angular.module('angularGanttDemoApp')
             $scope.data = [];
         };
 
+        // パターンモーダルダイアログ
+        // データ※ダミー
+        var getPatternData = function () {
+          return [
+            {
+              'title': '標準',
+              'content': '標準パターン',
+              'lastAccess': '2016/11/02'
+            },
+            {
+              'title': '月曜',
+              'content': '月曜日パターン',
+              'lastAccess': undefined
+            },
+            {
+              'title': '火曜',
+              'content': '火曜日パターン',
+              'lastAccess': undefined
+            },
+            {
+              'title': '水曜',
+              'content': '水曜日パターン',
+              'lastAccess': '2016/11/05'
+            },
+            {
+              'title': '木曜',
+              'content': '木曜日パターン',
+              'lastAccess': '2016/11/22'
+            },
+            {
+              'title': '金曜',
+              'content': '金曜日パターン',
+              'lastAccess': undefined
+            },
+            {
+              'title': '土曜',
+              'content': '土曜日パターン',
+              'lastAccess': undefined
+            },
+            {
+              'title': '日曜',
+              'content': '日曜日パターン',
+              'lastAccess': undefined
+            }
+          ];
+        };
+
+        $scope.patternModal = {
+          tabs: getPatternData(),
+          'instance': undefined,
+          activePattern: undefined,
+          activeLastAccess: undefined,
+          isActive: function (title) {
+            return $scope.patternModal.activePattern === title ? true : false;
+          },
+          setActive: function (title, lastAccess) {
+            $scope.patternModal.activePattern = title;
+            $scope.patternModal.activeLastAccess = lastAccess;
+          }
+        };
+        $scope.patternModal.instance = $modal({
+          animation: 'am-fade-and-slide-top',
+          title: '基本パターン登録',
+          templateUrl: 'template/P002_pattern.html',
+          show: false
+        });
+        $scope.patternModal.instance.$promise.then(function () {
+          $scope.patternModal.instance.$scope.patternModal = $scope.patternModal;
+        });
+
+        // 作業者選択モーダルダイアログ
+        $scope.workerModal = {
+          'instance': undefined,
+          'totalItems': 100,
+          'currentPage': 1,
+          'maxSize': 5
+        };
+        $scope.workerModal.instance = $modal({
+          animation: 'am-fade-and-slide-top',
+          title: '作業者選択',
+          templateUrl: 'template/P002_worker.html',
+          show: false
+        });
+        $scope.workerModal.instance.$promise.then(function () {
+          $scope.workerModal.instance.$scope.workerModal = $scope.workerModal;
+        });
+
+
     }]);
 
 'use strict';
@@ -864,7 +980,7 @@ angular.module('angularGanttDemoApp')
                             name: '',
                             color: '#B0B0B0',
                             from: new Date(2016, 11, 15, 9, 0, 0),
-                            to: new Date(2016, 11, 15, 19, 0, 0),
+                            to: new Date(2016, 11, 15, 17, 0, 0),
                             movable: false,
                             planWork: true
                           }
@@ -875,7 +991,7 @@ angular.module('angularGanttDemoApp')
                             name: '',
                             color: '#6495ED',
                             from: new Date(2016, 11, 15, 8, 0, 0),
-                            to: new Date(2016, 11, 15, 20, 30, 0),
+                            to: new Date(2016, 11, 16, 11, 0, 0),
                             movable: false,
                             actualWork: true
                           }

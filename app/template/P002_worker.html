@@ -1,0 +1,114 @@
+<div class="modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" ng-show="title">
+        <button type="button" class="close" ng-click="$hide()">&times;</button>
+        <h4 class="modal-title" ng-bind-html="title"></h4>
+      </div>
+      <div class="modal-body">
+
+        <div class="input-group">
+          <span class="input-group-addon">事業所</span>
+          <div class="form-control">150_石狩LC</div>
+        </div>
+        <div class="dialogLinePad"></div>
+
+        <div class="input-group">
+          <div class="btn-group" ng-model="workerModal.groupType" bs-radio-group>
+            <label class="btn btn-success">
+              <input type="radio" class="btn btn-success" value="1" ng-click="workerModal.chgGroupType()"><strong>詳細グループ</strong>
+            </label>
+            <label class="btn btn-success">
+              <input type="radio" class="btn btn-success" value="2" ng-click="workerModal.chgGroupType()"><strong>グループ</strong>
+            </label>
+            <label class="btn btn-success">
+              <input type="radio" class="btn btn-success" value="3" ng-click="workerModal.chgGroupType()"><strong>ABC分類</strong>
+            </label>
+          </div>
+        </div>
+        <div class="dialogLinePad"></div>
+
+        <div class="input-group">
+          <span class="input-group-addon">グループ</span>
+          <ui-select ng-model="workerModal.group" theme="bootstrap">
+              <ui-select-match placeholder="グループコード">
+                  <span ng-bind="$select.selected.name"></span>
+              </ui-select-match>
+              <ui-select-choices repeat="item in (workerModal.groups | filter: $select.search) track by item.id">
+                  <span ng-bind="item.name"></span>
+              </ui-select-choices>
+          </ui-select>
+        </div>
+        <div class="dialogLinePad"></div>
+
+        <div class="input-group">
+          <span class="input-group-addon">氏名コード</span>
+          <input type="text" class="form-control"></input>
+          <span class="input-group-addon">氏名</span>
+          <input type="text" class="form-control"></input>
+          <span class="input-group-btn">
+            <button type="button" class="btn btn-primary" ng-click="workerModal.searchUser()">
+              <span class="glyphicon glyphicon glyphicon-search" aria-hidden="true"></span>
+            </button>
+          </span>
+        </div>
+
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>氏名コード</th>
+              <th>氏名</th>
+              <th>雇用形態</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="user in workerModal.currentPageDataArray"
+              ng-model="workerModal.currentPageDataArray"
+              ng-class="{tableRowSelect: workerModal.isSelectedUser(user.userCd)}"
+              ng-click="workerModal.selectUser(user.userCd, user.userName)">
+              <td>{{user.userCd}}</td>
+              <td>{{user.userName}}</td>
+              <td>{{user.userClass}}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <nav ng-show="workerModal.currentPageDataArray.length !== 0">
+          <ul class="pagination">
+            <li ng-class="{'page-item': true, disabled: workerModal.isFirstPage()}" ng-model="workerModal.currentArea">
+              <a ng-class="{'page-link': true, disabled: workerModal.isFirstPage()}" href="#" tabindex="-1" ng-click="workerModal.prevPage()">
+                <span aria-hidden="true">&lsaquo;</span>
+              </a>
+            </li>
+            <li class="page-item" ng-show="!workerModal.isFirstArea()" ng-model="workerModal.currentArea">
+              <a class="page-link" href="#" ng-click="workerModal.prevArea()">&hellip;</a>
+            </li>
+            <li ng-repeat="pageNo in workerModal.currentPageArray" ng-model="workerModal.currentPageArray"
+              ng-class="{'page-item': true, active: workerModal.isCurrentPage(pageNo)}">
+              <a class="page-link" href="#" ng-click="workerModal.setPage(pageNo)">{{pageNo}}</a>
+            </li>
+
+            <li class="page-item" ng-show="!workerModal.isLastArea()" ng-model="workerModal.currentArea">
+              <a class="page-link" href="#" ng-click="workerModal.nextArea()">&hellip;</a>
+            </li>
+            <li ng-class="{'page-item': true, disabled: workerModal.isLastPage()}" ng-model="workerModal.currentArea">
+              <a ng-class="{'page-link': true, disabled: workerModal.isLastPage()}" href="#" ng-click="workerModal.nextPage()">
+                <span aria-hidden="true">&rsaquo;</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" ng-click="workerModal.cancel()">
+          <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+          戻る
+        </button>
+        <button type="button" class="btn btn-primary" ng-click="workerModal.select()" ng-disabled="workerModal.selectedUser === undefined">
+          <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+          選択
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

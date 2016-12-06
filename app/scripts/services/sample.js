@@ -307,4 +307,122 @@ angular.module('angularGanttDemoApp')
         }
       };
     }])
+    .service('TaskRowManager', ['moment', function TaskRowManager(moment) {
+      return {
+          getDummy: function () {
+            return moment(new Date(2016,11,1,0,0,0));
+          },
+          getRowData: function() {
+              return [
+                      // Order is optional. If not specified it will be assigned automatically
+                      {name: '勤務計画', id: '0', sortable: false, drawTask: false, color: '#E0FFFF', tasks: []},
+                      {name: '就業実績', id: '1', sortable: false, drawTask: false, color: '#E0FFFF', tasks: []},
+                      {name: '', id: '2', workmin: undefined, drawTask: false, color: '#E0FFFF', workSummary: true, tasks: []},
+                      {name: '製造所', id: '3', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: '荷卸し', id: '10', parent: '3', workmin: undefined, tasks: []},
+                      {name: '入荷検品', id: '11', parent: '3', workmin: undefined, tasks: []},
+                      {name: '荷役（入荷）', id: '12', parent: '3', workmin: undefined, tasks: []},
+                      {name: '出荷検品', id: '13', parent: '3', tasks: []},
+                      {name: '荷役（出荷）', id: '14', parent: '3', tasks: []},
+                      {name: '本倉庫', id: '4', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: '梱', id: '41', parent: '4', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: '入荷', id: '411', parent: '41', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: '１Ｆ', id: '4111', parent: '411', tasks: []},
+                      {name: '２Ｆ', id: '4112', parent: '411', tasks: []},
+                      {name: '３Ｆ', id: '4113', parent: '411', tasks: []},
+                      {name: '４Ｆ', id: '4114', parent: '411', tasks: []},
+                      {name: '出荷', id: '412', parent: '41', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: '１Ｆ', id: '4121', parent: '412', tasks: []},
+                      {name: '２Ｆ', id: '4122', parent: '412', tasks: []},
+                      {name: '３Ｆ', id: '4123', parent: '412', tasks: []},
+                      {name: '４Ｆ', id: '4124', parent: '412', tasks: []},
+                      {name: '検品・荷造り・積込', id: '413', parent: '41', tasks: []},
+                      {name: '外部倉庫', id: '414', parent: '41', tasks: []},
+                      {name: 'バラ', id: '42', parent: '4', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: '商品', id: '421', parent: '42', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: 'カート（積送）', id: '4211', parent: '421', tasks: []},
+                      {name: 'カート（広域）', id: '4212', parent: '421', tasks: []},
+                      {name: 'カート（コスミリオン）', id: '4213', parent: '421', tasks: []},
+                      {name: '梱包/積付/他', id: '4214', parent: '421', tasks: []},
+                      {name: '欠山', id: '4215', parent: '421', tasks: []},
+                      {name: '欠山（コスミリオン）', id: '4216', parent: '421', tasks: []},
+                      {name: '販促', id: '422', parent: '42', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: '販促バラ（積送）', id: '4221', parent: '422', tasks: []},
+                      {name: '販促バラ（経費）', id: '4222', parent: '422', tasks: []},
+                      {name: '販促バラ（広域）', id: '4223', parent: '422', tasks: []},
+                      {name: '積付/他', id: '4224', parent: '422', tasks: []},
+                      {name: '輸出業務', id: '43', parent: '4', tasks: []},
+                      {name: '他', id: '44', parent: '4', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: 'セット加工', id: '441', parent: '44', tasks: []},
+                      {name: '棚卸し', id: '442', parent: '44', tasks: []},
+                      {name: '３Ｓ', id: '443', parent: '44', tasks: []},
+                      {name: '事務', id: '444', parent: '44', tasks: []},
+                      {name: 'その他', id: '445', parent: '44', tasks: []},
+                  ];
+          }
+      };
+
+    }])
+    .service('TaskManager', ['moment', function TaskManager(moment) {
+      var x = 0;
+      var newTaskId = function (id) {
+        var ret = (id + x) + '';
+        x += 1;
+        return ret;
+      };
+      return {
+        getTask: function(targetUser) {
+          console.log('targetUser=' + targetUser);
+          return [
+            // Order is optional. If not specified it will be assigned automatically
+            {
+              rowId: '0',
+              task: {
+                id: newTaskId(500),
+                name: '',
+                color: '#B0B0B0',
+                from: moment(new Date(2016, 11, 15, 9, 0, 0)),
+                to: moment(new Date(2016, 11, 15, 17, 0, 0)),
+                movable: false,
+                planWork: true
+              }
+            },
+            {
+              rowId: '1',
+              task: {
+                id: newTaskId(600),
+                name: '',
+                color: '#6495ED',
+                from: moment(new Date(2016, 11, 15, 8, 0, 0)),
+                to: moment(new Date(2016, 11, 16, 11, 0, 0)),
+                movable: false,
+                actualWork: true
+              }
+            },
+            {
+              rowId: '10',
+              task: {
+                id: newTaskId(700),
+                name: '荷卸し',
+                color: '#90EE90',
+                from: moment(new Date(2016, 11, 15, 8, 0, 0)),
+                to: moment(new Date(2016, 11, 15, 9, 0, 0)),
+                workmin: 60
+              }
+            },
+            {
+              rowId: '11',
+              task: {
+                id: newTaskId(800),
+                name: '入荷検品',
+                color: '#90EE90',
+                from: moment(new Date(2016, 11, 15, 9, 0, 0)),
+                to: moment(new Date(2016, 11, 15, 10, 30, 0)),
+                workmin: 90
+              }
+            }
+          ];
+        }
+      };
+    }])
 ;

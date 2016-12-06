@@ -11,13 +11,14 @@ angular.module('angularGanttDemoApp')
     .controller('MainCtrl', [
       '$scope', '$timeout', '$log', 'ganttUtils', 'GanttObjectModel',
       'Sample', 'ganttMouseOffset', 'ganttDebounce', 'moment',
-      '$modal', '$popover', 'TaskDateCheck', '$alert', function(
+      '$modal', '$popover', 'TaskDateCheck', '$alert', 'TaskRowManager',
+      'TaskManager', function(
         $scope, $timeout, $log, utils, ObjectModel, Sample,
         mouseOffset, debounce, moment,
-        $modal, $popover, TaskDateCheck, $alert
+        $modal, $popover, TaskDateCheck, $alert, TaskRowManager,
+        TaskManager
       ) {
         var objectModel;
-        var dataToRemove;
         var targetDay = moment(new Date(2016, 11, 15, 11, 20, 0));  // 対象日
         var targetFrom = moment(new Date(2016, 11, 15, 8, 0, 0));   // 対象日開始
         var targetTo = moment(new Date(2016, 11, 16, 12, 0, 0)); // 対象日終了
@@ -44,6 +45,12 @@ angular.module('angularGanttDemoApp')
         $scope.mvTargetRow = undefined; // 移動対象タスクの元の行
         $scope.mvTargetPos = undefined; // 移送対象タスクのfrom～to
         $scope.summaryRow = undefined;  // 時間合計行
+        $scope.targetUser = undefined;  // 作業者
+        $scope.targetUserName = undefined;  // 作業者名称
+
+        var drawOK = function () {
+          return $scope.targetUser !== undefined;
+        };
 
         // タスク編集画面用時間リスト
         var hourList = [];
@@ -87,6 +94,38 @@ angular.module('angularGanttDemoApp')
         };
 
         // タスク操作
+        var clearTask = function () {
+          angular.forEach($scope.data, function (row) {
+            row.tasks = [];
+            //row.workmin = undefined;
+          });
+          console.log($scope.$applyAsync());
+        };
+        var loadTask = function () {
+          var taskList = TaskManager.getTask($scope.targetUser);
+          clearTask();
+          angular.forEach($scope.data, function (row) {
+            angular.forEach(taskList, function (task) {
+              if (task.rowId === row.id) {
+                // タスクを対象行に追加
+                row.tasks.push(angular.copy(task.task));
+                /*
+                if (task.workmin !== undefined) {
+                  row.workmin = task.workmin;
+                  if ($scope.summaryRow.workmin === undefined) {
+                    $scope.summaryRow.workmin = task.workmin;
+                  }
+                  else {
+                    $scope.summaryRow.workmin += task.workmin;
+                  }
+                }
+                */
+              }
+            });
+          });
+          $scope.$applyAsync();
+        };
+
         var deleteTask = function (row, task) {
           // 重なりチェックデータからタスクを削除
           TaskDateCheck.delTask(task.id);
@@ -327,7 +366,7 @@ angular.module('angularGanttDemoApp')
           $timeout(function () {
             $scope.options.maxHeight = true;
             $scope.collapseAll(); // 全ノードを一旦畳む
-            $scope.api.tree.expand('1');  // 先頭ノードのみ開く※パラメータによる
+            $scope.api.tree.expand('3');  // 先頭ノードのみ開く※パラメータによる
             //$('.gantt-scrollable').scrollLeft(480);
 
             // 表の罫線設定（作業時間左）
@@ -371,6 +410,9 @@ angular.module('angularGanttDemoApp')
             else {
               // 調整済みの日時で追加
               TaskDateCheck.addTask(task.model.id, fromTo.from, fromTo.to, planWork, actualWork);
+              if (planWork === false && actualWork === false) {
+                setWorkMinutes(task.row, 0, fromTo.to.diff(fromTo.from, 'm'));
+              }
               resizeTask(task.model, fromTo.from, fromTo.to);
               $scope.$applyAsync();
             }
@@ -572,7 +614,7 @@ angular.module('angularGanttDemoApp')
             toolTipFormat: 'HH:mm',
             canDraw: function(event) {
                 var isLeftMouseButton = event.button === 0 || event.button === 1;
-                return $scope.options.draw && !$scope.options.readOnly && isLeftMouseButton;
+                return drawOK() && $scope.options.draw && !$scope.options.readOnly && isLeftMouseButton;
             },
             drawTaskFactory: function() {
                 return {
@@ -813,8 +855,9 @@ angular.module('angularGanttDemoApp')
         // Reload data action
         $scope.load = function() {
             console.log('***Load');
-            $scope.data = Sample.getSampleData();
-            dataToRemove = undefined;
+            //$scope.data = Sample.getSampleData();
+            $scope.data = TaskRowManager.getRowData();
+
             $scope.rowcheck = [];
 
             //$scope.timespans = Sample.getSampleTimespans();
@@ -826,10 +869,12 @@ angular.module('angularGanttDemoApp')
         };
 
         // Remove data action
+        /*
         $scope.remove = function() {
             $scope.api.data.remove(dataToRemove);
             $scope.api.dependencies.refresh();
         };
+        */
 
         // Clear data action
         $scope.clear = function() {
@@ -837,6 +882,7 @@ angular.module('angularGanttDemoApp')
         };
 
         // パターンモーダルダイアログ
+        // データ※ダミー
         var getPatternData = function () {
           return [
             {
@@ -884,7 +930,7 @@ angular.module('angularGanttDemoApp')
 
         $scope.patternModal = {
           tabs: getPatternData(),
-          'instance': undefined,
+          instance: undefined,
           activePattern: undefined,
           activeLastAccess: undefined,
           isActive: function (title) {
@@ -903,6 +949,307 @@ angular.module('angularGanttDemoApp')
         });
         $scope.patternModal.instance.$promise.then(function () {
           $scope.patternModal.instance.$scope.patternModal = $scope.patternModal;
+        });
+
+        // 作業者選択モーダルダイアログ
+        // データ※ダミー
+        var getUserData = function () {
+          return [
+            {
+              userCd: '000001',
+              userName: '○山×夫',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000002',
+              userName: '○山×子',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000003',
+              userName: '○谷×彦',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000004',
+              userName: '○丘×子',
+              userClass: '契約'
+            },
+            {
+              userCd: '000005',
+              userName: '○下×太',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000006',
+              userName: '○田×朗',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000007',
+              userName: '○島×美',
+              userClass: '契約'
+            },
+            {
+              userCd: '000008',
+              userName: '○川×夫',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000009',
+              userName: '○山×佑',
+              userClass: '契約'
+            },
+            {
+              userCd: '000010',
+              userName: '○崎×子',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000011',
+              userName: '○水×冶',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000012',
+              userName: '○木×美',
+              userClass: '契約'
+            },
+            {
+              userCd: '000013',
+              userName: '○条×男',
+              userClass: '契約'
+            },
+            {
+              userCd: '000014',
+              userName: '○平×也',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000015',
+              userName: '○郷×子',
+              userClass: 'パート'
+            },
+          ];
+        };
+
+        var getDetailGroup = function () {
+          return [
+            {id: '1', name: 'ＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷ'},
+            {id: '2', name: '詳細２'},
+            {id: '3', name: '詳細３'},
+            {id: '4', name: 'ＫＣカートＧその他'}
+          ];
+        };
+
+        var getL1Group = function () {
+          return [
+            {id: '1', name: '大分類１'},
+            {id: '2', name: '大分類２'},
+            {id: '3', name: '大分類３'},
+            {id: '4', name: '大分類４'}
+          ];
+        };
+
+        var getABCGroup = function () {
+          return [
+            {id: '1', name: 'ABC１'},
+            {id: '2', name: 'ABC２'},
+            {id: '3', name: 'ABC３'},
+            {id: '4', name: 'ABC４'}
+          ];
+        };
+
+        $scope.workerModal = {
+          instance: undefined,
+          data: [],//getUserData(),
+          groupType: 1,
+          group: undefined,
+          groups: [],
+          totalItems: 5,
+          currentPage: 1,
+          currentArea: 1,
+          currentPageArray: [],
+          currentPageDataArray: [],
+          pagesize: 5,
+          areaSize: 3,
+          selectedUser: undefined,
+          selectedUserName: undefined,
+          totalPage: function () {
+            var self = $scope.workerModal;
+            var total = Math.floor(self.totalItems / self.pagesize);
+            return (self.totalItems % self.pagesize) === 0 ? total : total + 1;
+          },
+          totalArea: function () {
+            var self = $scope.workerModal;
+            var total = Math.floor(self.totalPage() / self.areaSize);
+            return (self.totalPage() % self.areaSize) === 0 ? total : total + 1;
+          },
+          isFirstPage: function () {
+            var self = $scope.workerModal;
+            return (self.currentPage === 1);
+          },
+          isLastPage: function () {
+            var self = $scope.workerModal;
+            return (self.currentPage === self.totalPage());
+          },
+          isFirstArea: function () {
+            var self = $scope.workerModal;
+            return (self.currentArea === 1);
+          },
+          isLastArea: function () {
+            var self = $scope.workerModal;
+            return (self.currentArea === self.totalArea());
+          },
+          getCurrentPageArray: function () {
+            var self = $scope.workerModal;
+            var arr = [];
+            var totalPage = self.totalPage();
+            var elem;
+            for (var i = 0; i < self.areaSize; i++) {
+              elem = ((self.currentArea - 1) * self.areaSize) + (i + 1);
+              if (elem <= totalPage) {
+                arr.push(elem);
+              }
+            }
+            return arr;
+          },
+
+          getCurrentPageDataArray: function () {
+            var self = $scope.workerModal;
+            var arr = [];
+            var pos = (self.currentPage - 1) * self.pagesize;
+            for (var i = pos; i < (pos + self.pagesize); i++) {
+              if (i < self.data.length) {
+                arr.push(self.data[i]);
+              }
+            }
+            return arr;
+          },
+
+          isCurrentPage: function (page) {
+            var self = $scope.workerModal;
+            console.log('pageNo=' + page);
+            return (page === self.currentPage);
+          },
+          prevArea: function () {
+            var self = $scope.workerModal;
+            if (!self.isFirstArea()) {
+              self.currentArea -= 1;
+              self.currentPageArray = self.getCurrentPageArray();
+              self.currentPage = self.currentPageArray[self.currentPageArray.length - 1];
+              self.currentPageDataArray = self.getCurrentPageDataArray();
+              self.selectedUser = undefined;
+            }
+          },
+          nextArea: function () {
+            var self = $scope.workerModal;
+            if (!self.isLastArea()) {
+              self.currentArea += 1;
+              self.currentPageArray = self.getCurrentPageArray();
+              self.currentPage = self.currentPageArray[0];
+              self.currentPageDataArray = self.getCurrentPageDataArray();
+              self.selectedUser = undefined;
+            }
+          },
+          prevPage: function () {
+            var self = $scope.workerModal;
+            if (self.currentPage > 1 ) {
+              if (self.currentPageArray.includes(self.currentPage - 1)) {
+                self.currentPage -= 1;
+                self.currentPageDataArray = self.getCurrentPageDataArray();
+                self.selectedUser = undefined;
+              }
+              else {
+                self.prevArea();
+              }
+            }
+          },
+          nextPage: function () {
+            var self = $scope.workerModal;
+            if (self.currentPage < self.totalPage() ) {
+              if (self.currentPageArray.includes(self.currentPage + 1)) {
+                self.currentPage += 1;
+                self.currentPageDataArray = self.getCurrentPageDataArray();
+                self.selectedUser = undefined;
+              }
+              else {
+                self.nextArea();
+              }
+            }
+          },
+          setPage: function (page) {
+            var self = $scope.workerModal;
+            console.log('pageNo=' + page);
+            self.currentPage = page;
+            self.currentPageDataArray = self.getCurrentPageDataArray();
+            self.selectedUser = undefined;
+          },
+          chgGroupType: function () {
+            var self = $scope.workerModal;
+            var gType = self.groupType + '';
+            if (gType === '1') {
+              self.groups = getDetailGroup();
+            }
+            else if (gType === '2') {
+              self.groups = getL1Group();
+            }
+            else {
+              self.groups = getABCGroup();
+            }
+          },
+          searchUser: function () {
+            var self = $scope.workerModal;
+            self.selectedUser = undefined;
+            self.data = getUserData();
+            self.totalItems = self.data.length;
+            self.currentPageArray = self.getCurrentPageArray();
+            self.currentPageDataArray = self.getCurrentPageDataArray();
+          },
+          isSelectedUser: function (user) {
+            var self = $scope.workerModal;
+            if (self.selectedUser === user) {
+              return true;
+            }
+            return false;
+          },
+          selectUser: function (user, userName) {
+            console.log('Here!');
+            var self = $scope.workerModal;
+            self.selectedUser = user;
+            self.selectedUserName = userName;
+          },
+          cancel: function () {
+            var self = $scope.workerModal;
+            self.selectedUser = undefined;
+            self.data = [];
+            self.totalItems = undefined;
+            self.currentPageArray = [];
+            self.currentPageDataArray = [];
+            self.instance.hide();
+          },
+          select: function () {
+            var self = $scope.workerModal;
+
+            $scope.targetUser = self.selectedUser;  // 作業者
+            $scope.targetUserName = self.selectedUser + '_' + self.selectedUserName;  // 作業者名称
+            loadTask();
+
+            self.cancel();
+          }
+        };
+        $scope.workerModal.groups = getDetailGroup();
+        console.log('$scope.workerModal.totalArea()=' + $scope.workerModal.totalArea());
+        console.log('$scope.workerModal.totalArea()=' + $scope.workerModal.totalPage());
+
+        $scope.workerModal.instance = $modal({
+          animation: 'am-fade-and-slide-top',
+          title: '作業者選択',
+          templateUrl: 'template/P002_worker.html',
+          show: false
+        });
+        $scope.workerModal.instance.$promise.then(function () {
+          $scope.workerModal.instance.$scope.workerModal = $scope.workerModal;
         });
 
 
