@@ -2,13 +2,13 @@
 
 /**
  * @ngdoc overview
- * @name angularGanttDemoApp
+ * @name P003PersonalWork
  * @description
- * # angularGanttDemoApp
+ * # P003PersonalWork
  *
  * Main module of the application.
  */
-angular.module('angularGanttDemoApp', [
+angular.module('P003PersonalWork', [
     'gantt', // angular-gantt.
     'gantt.sortable',
     'gantt.movable',
@@ -35,22 +35,23 @@ angular.module('angularGanttDemoApp', [
 
 /**
  * @ngdoc function
- * @name angularGanttDemoApp.controller:MainCtrl
+ * @name P003PersonalWork.controller:P003Ctrl
  * @description
- * # MainCtrl
- * Controller of the angularGanttDemoApp
+ * # P003Ctrl
+ * Controller of the P003PersonalWork
  */
-angular.module('angularGanttDemoApp')
-    .controller('MainCtrl', [
+angular.module('P003PersonalWork')
+    .controller('P003Ctrl', [
       '$scope', '$timeout', '$log', 'ganttUtils', 'GanttObjectModel',
-      'Sample', 'ganttMouseOffset', 'ganttDebounce', 'moment',
-      '$modal', '$popover', 'TaskDateCheck', '$alert', function(
-        $scope, $timeout, $log, utils, ObjectModel, Sample,
+      'ganttMouseOffset', 'ganttDebounce', 'moment',
+      '$modal', '$popover', 'TaskDateCheck', '$alert', 'TaskRowManager',
+      'TaskManager', function(
+        $scope, $timeout, $log, utils, ObjectModel,
         mouseOffset, debounce, moment,
-        $modal, $popover, TaskDateCheck, $alert
+        $modal, $popover, TaskDateCheck, $alert, TaskRowManager,
+        TaskManager
       ) {
         var objectModel;
-        var dataToRemove;
         var targetDay = moment(new Date(2016, 11, 15, 11, 20, 0));  // 対象日
         var targetFrom = moment(new Date(2016, 11, 15, 8, 0, 0));   // 対象日開始
         var targetTo = moment(new Date(2016, 11, 16, 12, 0, 0)); // 対象日終了
@@ -77,6 +78,12 @@ angular.module('angularGanttDemoApp')
         $scope.mvTargetRow = undefined; // 移動対象タスクの元の行
         $scope.mvTargetPos = undefined; // 移送対象タスクのfrom～to
         $scope.summaryRow = undefined;  // 時間合計行
+        $scope.targetUser = undefined;  // 作業者
+        $scope.targetUserName = undefined;  // 作業者名称
+
+        var drawOK = function () {
+          return $scope.targetUser !== undefined;
+        };
 
         // タスク編集画面用時間リスト
         var hourList = [];
@@ -120,6 +127,42 @@ angular.module('angularGanttDemoApp')
         };
 
         // タスク操作
+        var clearTask = function () {
+          angular.forEach($scope.data, function (row) {
+            row.tasks = [];
+            row.workmin = undefined;
+          });
+        };
+
+        var loadTask = function (taskList, cnt) {
+          if (cnt > 5) {
+            console.log('retry over!');
+          }
+          else if (TaskDateCheck.countTask() === 0) {
+            console.log('load=' + cnt);
+            angular.forEach($scope.data, function (row) {
+              angular.forEach(taskList, function (task) {
+                if (task.rowId === row.id) {
+                  // タスクを対象行に追加
+                  row.tasks.push(angular.copy(task.task));
+                }
+              });
+            });
+          }
+          else {
+            console.log('retry=' + cnt);
+            $timeout(function () {
+              loadTask(taskList, (cnt + 1));
+            }, 200);
+          }
+        };
+
+        var ReloadTasks = function () {
+          var taskList = TaskManager.getTask($scope.targetUser);
+          clearTask();
+          loadTask(taskList, 0);
+        };
+
         var deleteTask = function (row, task) {
           // 重なりチェックデータからタスクを削除
           TaskDateCheck.delTask(task.id);
@@ -330,7 +373,7 @@ angular.module('angularGanttDemoApp')
             placement: 'right auto',
             title: (bolRegist ? '作業時間登録' : '作業時間更新'),
             content: 'OK',
-            templateUrl: 'template/P002_registration.html',
+            templateUrl: 'template/P003_registration.html',
             trigger: 'manual',
             container: 'body',
             onShow: function () {
@@ -360,7 +403,7 @@ angular.module('angularGanttDemoApp')
           $timeout(function () {
             $scope.options.maxHeight = true;
             $scope.collapseAll(); // 全ノードを一旦畳む
-            $scope.api.tree.expand('1');  // 先頭ノードのみ開く※パラメータによる
+            $scope.api.tree.expand('3');  // 先頭ノードのみ開く※パラメータによる
             //$('.gantt-scrollable').scrollLeft(480);
 
             // 表の罫線設定（作業時間左）
@@ -404,6 +447,9 @@ angular.module('angularGanttDemoApp')
             else {
               // 調整済みの日時で追加
               TaskDateCheck.addTask(task.model.id, fromTo.from, fromTo.to, planWork, actualWork);
+              if (planWork === false && actualWork === false) {
+                setWorkMinutes(task.row, 0, fromTo.to.diff(fromTo.from, 'm'));
+              }
               resizeTask(task.model, fromTo.from, fromTo.to);
               $scope.$applyAsync();
             }
@@ -492,6 +538,12 @@ angular.module('angularGanttDemoApp')
           if (task.model.name !== task.row.model.name) {
               task.model.name = task.row.model.name;
           }
+        };
+
+        var taskRemove = function (eventName, task) {
+          $log.info('[Event] ' + eventName + ': ' + task.model.name);
+          console.log(task.model.id);
+          TaskDateCheck.delTask(task.model.id);
         };
 
         // Event handler
@@ -605,7 +657,7 @@ angular.module('angularGanttDemoApp')
             toolTipFormat: 'HH:mm',
             canDraw: function(event) {
                 var isLeftMouseButton = event.button === 0 || event.button === 1;
-                return $scope.options.draw && !$scope.options.readOnly && isLeftMouseButton;
+                return drawOK() && $scope.options.draw && !$scope.options.readOnly && isLeftMouseButton;
             },
             drawTaskFactory: function() {
                 return {
@@ -641,7 +693,8 @@ angular.module('angularGanttDemoApp')
                     });
                     */
                     api.tasks.on.rowChange($scope, addEventName('tasks.on.rowChange', logTaskEvent));
-                    api.tasks.on.remove($scope, addEventName('tasks.on.remove', logTaskEvent));
+                    //api.tasks.on.remove($scope, addEventName('tasks.on.remove', logTaskEvent));
+                    api.tasks.on.remove($scope, addEventName('tasks.on.remove', taskRemove));
 
                     if (api.tasks.on.moveBegin) {
                         //api.tasks.on.moveBegin($scope, addEventName('tasks.on.moveBegin', logTaskEvent));
@@ -846,8 +899,9 @@ angular.module('angularGanttDemoApp')
         // Reload data action
         $scope.load = function() {
             console.log('***Load');
-            $scope.data = Sample.getSampleData();
-            dataToRemove = undefined;
+            //$scope.data = Sample.getSampleData();
+            $scope.data = TaskRowManager.getRowData();
+
             $scope.rowcheck = [];
 
             //$scope.timespans = Sample.getSampleTimespans();
@@ -859,10 +913,12 @@ angular.module('angularGanttDemoApp')
         };
 
         // Remove data action
+        /*
         $scope.remove = function() {
             $scope.api.data.remove(dataToRemove);
             $scope.api.dependencies.refresh();
         };
+        */
 
         // Clear data action
         $scope.clear = function() {
@@ -918,7 +974,7 @@ angular.module('angularGanttDemoApp')
 
         $scope.patternModal = {
           tabs: getPatternData(),
-          'instance': undefined,
+          instance: undefined,
           activePattern: undefined,
           activeLastAccess: undefined,
           isActive: function (title) {
@@ -932,7 +988,7 @@ angular.module('angularGanttDemoApp')
         $scope.patternModal.instance = $modal({
           animation: 'am-fade-and-slide-top',
           title: '基本パターン登録',
-          templateUrl: 'template/P002_pattern.html',
+          templateUrl: 'template/P003_pattern.html',
           show: false
         });
         $scope.patternModal.instance.$promise.then(function () {
@@ -940,16 +996,306 @@ angular.module('angularGanttDemoApp')
         });
 
         // 作業者選択モーダルダイアログ
-        $scope.workerModal = {
-          'instance': undefined,
-          'totalItems': 100,
-          'currentPage': 1,
-          'maxSize': 5
+        // データ※ダミー
+        var getUserData = function () {
+          return [
+            {
+              userCd: '000001',
+              userName: '○山×夫',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000002',
+              userName: '○山×子',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000003',
+              userName: '○谷×彦',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000004',
+              userName: '○丘×子',
+              userClass: '契約'
+            },
+            {
+              userCd: '000005',
+              userName: '○下×太',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000006',
+              userName: '○田×朗',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000007',
+              userName: '○島×美',
+              userClass: '契約'
+            },
+            {
+              userCd: '000008',
+              userName: '○川×夫',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000009',
+              userName: '○山×佑',
+              userClass: '契約'
+            },
+            {
+              userCd: '000010',
+              userName: '○崎×子',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000011',
+              userName: '○水×冶',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000012',
+              userName: '○木×美',
+              userClass: '契約'
+            },
+            {
+              userCd: '000013',
+              userName: '○条×男',
+              userClass: '契約'
+            },
+            {
+              userCd: '000014',
+              userName: '○平×也',
+              userClass: 'パート'
+            },
+            {
+              userCd: '000015',
+              userName: '○郷×子',
+              userClass: 'パート'
+            },
+          ];
         };
+
+        var getDetailGroup = function () {
+          return [
+            {id: '1', name: 'ＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷＷ'},
+            {id: '2', name: '詳細２'},
+            {id: '3', name: '詳細３'},
+            {id: '4', name: 'ＫＣカートＧその他'}
+          ];
+        };
+
+        var getL1Group = function () {
+          return [
+            {id: '1', name: '大分類１'},
+            {id: '2', name: '大分類２'},
+            {id: '3', name: '大分類３'},
+            {id: '4', name: '大分類４'}
+          ];
+        };
+
+        var getABCGroup = function () {
+          return [
+            {id: '1', name: 'ABC１'},
+            {id: '2', name: 'ABC２'},
+            {id: '3', name: 'ABC３'},
+            {id: '4', name: 'ABC４'}
+          ];
+        };
+
+        $scope.workerModal = {
+          instance: undefined,
+          data: [],//getUserData(),
+          groupType: 1,
+          group: undefined,
+          groups: [],
+          totalItems: 5,
+          currentPage: 1,
+          currentArea: 1,
+          currentPageArray: [],
+          currentPageDataArray: [],
+          pagesize: 5,
+          areaSize: 3,
+          selectedUser: undefined,
+          selectedUserName: undefined,
+          selectPlaceHolder: function () {
+            var self = $scope.workerModal;
+            var gt = self.groupType + '';
+            return gt === '1' ? '詳細グループコード' : (gt === '2' ? 'グループコード' : 'ABC分類コード');
+          },
+          totalPage: function () {
+            var self = $scope.workerModal;
+            var total = Math.floor(self.totalItems / self.pagesize);
+            return (self.totalItems % self.pagesize) === 0 ? total : total + 1;
+          },
+          totalArea: function () {
+            var self = $scope.workerModal;
+            var total = Math.floor(self.totalPage() / self.areaSize);
+            return (self.totalPage() % self.areaSize) === 0 ? total : total + 1;
+          },
+          isFirstPage: function () {
+            var self = $scope.workerModal;
+            return (self.currentPage === 1);
+          },
+          isLastPage: function () {
+            var self = $scope.workerModal;
+            return (self.currentPage === self.totalPage());
+          },
+          isFirstArea: function () {
+            var self = $scope.workerModal;
+            return (self.currentArea === 1);
+          },
+          isLastArea: function () {
+            var self = $scope.workerModal;
+            return (self.currentArea === self.totalArea());
+          },
+          getCurrentPageArray: function () {
+            var self = $scope.workerModal;
+            var arr = [];
+            var totalPage = self.totalPage();
+            var elem;
+            for (var i = 0; i < self.areaSize; i++) {
+              elem = ((self.currentArea - 1) * self.areaSize) + (i + 1);
+              if (elem <= totalPage) {
+                arr.push(elem);
+              }
+            }
+            return arr;
+          },
+
+          getCurrentPageDataArray: function () {
+            var self = $scope.workerModal;
+            var arr = [];
+            var pos = (self.currentPage - 1) * self.pagesize;
+            for (var i = pos; i < (pos + self.pagesize); i++) {
+              if (i < self.data.length) {
+                arr.push(self.data[i]);
+              }
+            }
+            return arr;
+          },
+
+          isCurrentPage: function (page) {
+            var self = $scope.workerModal;
+            console.log('pageNo=' + page);
+            return (page === self.currentPage);
+          },
+          prevArea: function () {
+            var self = $scope.workerModal;
+            if (!self.isFirstArea()) {
+              self.currentArea -= 1;
+              self.currentPageArray = self.getCurrentPageArray();
+              self.currentPage = self.currentPageArray[self.currentPageArray.length - 1];
+              self.currentPageDataArray = self.getCurrentPageDataArray();
+              self.selectedUser = undefined;
+            }
+          },
+          nextArea: function () {
+            var self = $scope.workerModal;
+            if (!self.isLastArea()) {
+              self.currentArea += 1;
+              self.currentPageArray = self.getCurrentPageArray();
+              self.currentPage = self.currentPageArray[0];
+              self.currentPageDataArray = self.getCurrentPageDataArray();
+              self.selectedUser = undefined;
+            }
+          },
+          prevPage: function () {
+            var self = $scope.workerModal;
+            if (self.currentPage > 1 ) {
+              if (self.currentPageArray.includes(self.currentPage - 1)) {
+                self.currentPage -= 1;
+                self.currentPageDataArray = self.getCurrentPageDataArray();
+                self.selectedUser = undefined;
+              }
+              else {
+                self.prevArea();
+              }
+            }
+          },
+          nextPage: function () {
+            var self = $scope.workerModal;
+            if (self.currentPage < self.totalPage() ) {
+              if (self.currentPageArray.includes(self.currentPage + 1)) {
+                self.currentPage += 1;
+                self.currentPageDataArray = self.getCurrentPageDataArray();
+                self.selectedUser = undefined;
+              }
+              else {
+                self.nextArea();
+              }
+            }
+          },
+          setPage: function (page) {
+            var self = $scope.workerModal;
+            console.log('pageNo=' + page);
+            self.currentPage = page;
+            self.currentPageDataArray = self.getCurrentPageDataArray();
+            self.selectedUser = undefined;
+          },
+          chgGroupType: function () {
+            var self = $scope.workerModal;
+            var gType = self.groupType + '';
+            if (gType === '1') {
+              self.groups = getDetailGroup();
+            }
+            else if (gType === '2') {
+              self.groups = getL1Group();
+            }
+            else {
+              self.groups = getABCGroup();
+            }
+            self.group = undefined;
+          },
+          searchUser: function () {
+            var self = $scope.workerModal;
+            self.selectedUser = undefined;
+            self.data = getUserData();
+            self.totalItems = self.data.length;
+            self.currentPageArray = self.getCurrentPageArray();
+            self.currentPageDataArray = self.getCurrentPageDataArray();
+          },
+          isSelectedUser: function (user) {
+            var self = $scope.workerModal;
+            if (self.selectedUser === user) {
+              return true;
+            }
+            return false;
+          },
+          selectUser: function (user, userName) {
+            console.log('Here!');
+            var self = $scope.workerModal;
+            self.selectedUser = user;
+            self.selectedUserName = userName;
+          },
+          cancel: function () {
+            var self = $scope.workerModal;
+            self.selectedUser = undefined;
+            self.data = [];
+            self.totalItems = undefined;
+            self.currentPageArray = [];
+            self.currentPageDataArray = [];
+            self.instance.hide();
+          },
+          select: function () {
+            var self = $scope.workerModal;
+
+            $scope.targetUser = self.selectedUser;  // 作業者
+            $scope.targetUserName = self.selectedUser + '_' + self.selectedUserName;  // 作業者名称
+            ReloadTasks();
+
+            self.cancel();
+          }
+        };
+        $scope.workerModal.groups = getDetailGroup();
+        console.log('$scope.workerModal.totalArea()=' + $scope.workerModal.totalArea());
+        console.log('$scope.workerModal.totalArea()=' + $scope.workerModal.totalPage());
+
         $scope.workerModal.instance = $modal({
           animation: 'am-fade-and-slide-top',
           title: '作業者選択',
-          templateUrl: 'template/P002_worker.html',
+          templateUrl: 'template/P003_worker.html',
           show: false
         });
         $scope.workerModal.instance.$promise.then(function () {
@@ -963,127 +1309,12 @@ angular.module('angularGanttDemoApp')
 
 /**
  * @ngdoc service
- * @name angularGanttDemoApp.Sample
+ * @name P003PersonalWork.Sample
  * @description
  * # Sample
- * Service in the angularGanttDemoApp.
+ * Service in the P003PersonalWork.
  */
-angular.module('angularGanttDemoApp')
-    .service('Sample', function Sample() {
-        return {
-            getSampleData: function() {
-                return [
-                        // Order is optional. If not specified it will be assigned automatically
-                        {name: '勤務計画', sortable: false, drawTask: false, color: '#E0FFFF', tasks: [
-                          {
-                            id: '50',
-                            name: '',
-                            color: '#B0B0B0',
-                            from: new Date(2016, 11, 15, 9, 0, 0),
-                            to: new Date(2016, 11, 15, 17, 0, 0),
-                            movable: false,
-                            planWork: true
-                          }
-                        ]},
-                        {name: '就業実績', sortable: false, drawTask: false, color: '#E0FFFF', tasks: [
-                          {
-                            id: '51',
-                            name: '',
-                            color: '#6495ED',
-                            from: new Date(2016, 11, 15, 8, 0, 0),
-                            to: new Date(2016, 11, 16, 11, 0, 0),
-                            movable: false,
-                            actualWork: true
-                          }
-                        ]},
-                        {name: '', id: '0', workmin: 150, drawTask: false, color: '#E0FFFF', workSummary: true, tasks: []},
-                        {name: '製造所', id: '1', drawTask: false, color: '#FFFAC2', tasks: []},
-                        {name: '荷卸し', id: '10', parent: '1', workmin: 60, tasks: [
-                          {
-                              id: '100',
-                              name: '荷卸し',
-                              color: '#90EE90',
-                              from: new Date(2016, 11, 15, 8, 0, 0),
-                              to: new Date(2016, 11, 15, 9, 0, 0),
-                              workmin: 60,
-                          }
-                        ]},
-                        {name: '入荷検品', id: '11', parent: '1', workmin: 90, tasks: [
-                          {
-                              id: '101',
-                              name: '入荷検品',
-                              color: '#90EE90',
-                              from: new Date(2016, 11, 15, 9, 0, 0),
-                              to: new Date(2016, 11, 15, 10, 30, 0),
-                              workmin: 90,
-                          }
-                        ]},
-                        {name: '荷役（入荷）', id: '12', parent: '1', workmin: undefined, tasks: []},
-                        {name: '出荷検品', id: '13', parent: '1', tasks: []},
-                        {name: '荷役（出荷）', id: '14', parent: '1', tasks: []},
-                        {name: '本倉庫', id: '2', drawTask: false, color: '#FFFAC2', tasks: []},
-                        {name: '梱', id: '21', parent: '2', drawTask: false, color: '#FFFAC2', tasks: []},
-                        {name: '入荷', id: '211', parent: '21', drawTask: false, color: '#FFFAC2', tasks: []},
-                        {name: '１Ｆ', id: '2111', parent: '211', tasks: []},
-                        {name: '２Ｆ', id: '2112', parent: '211', tasks: []},
-                        {name: '３Ｆ', id: '2113', parent: '211', tasks: []},
-                        {name: '４Ｆ', id: '2114', parent: '211', tasks: []},
-                        {name: '出荷', id: '212', parent: '21', drawTask: false, color: '#FFFAC2', tasks: []},
-                        {name: '１Ｆ', id: '2121', parent: '212', tasks: []},
-                        {name: '２Ｆ', id: '2122', parent: '212', tasks: []},
-                        {name: '３Ｆ', id: '2123', parent: '212', tasks: []},
-                        {name: '４Ｆ', id: '2124', parent: '212', tasks: []},
-
-                        {name: '検品・荷造り・積込', id: '213', parent: '21', tasks: []},
-                        {name: '外部倉庫', id: '214', parent: '21', tasks: []},
-
-                        {name: 'バラ', id: '22', parent: '2', drawTask: false, color: '#FFFAC2', tasks: []},
-                        {name: '商品', id: '221', parent: '22', drawTask: false, color: '#FFFAC2', tasks: []},
-                        {name: 'カート（積送）', id: '2211', parent: '221', tasks: []},
-                        {name: 'カート（広域）', id: '2212', parent: '221', tasks: []},
-                        {name: 'カート（コスミリオン）', id: '2213', parent: '221', tasks: []},
-                        {name: '梱包/積付/他', id: '2214', parent: '221', tasks: []},
-                        {name: '欠山', id: '2215', parent: '221', tasks: []},
-                        {name: '欠山（コスミリオン）', id: '2216', parent: '221', tasks: []},
-
-                        {name: '販促', id: '222', parent: '22', drawTask: false, color: '#FFFAC2', tasks: []},
-                        {name: '販促バラ（積送）', id: '2221', parent: '222', tasks: []},
-                        {name: '販促バラ（経費）', id: '2222', parent: '222', tasks: []},
-                        {name: '販促バラ（広域）', id: '2223', parent: '222', tasks: []},
-                        {name: '積付/他', id: '2224', parent: '222', tasks: []},
-
-                        {name: '輸出業務', id: '23', parent: '2', tasks: []},
-
-                        {name: '他', id: '24', parent: '2', drawTask: false, color: '#FFFAC2', tasks: []},
-                        {name: 'セット加工', id: '241', parent: '24', tasks: []},
-                        {name: '棚卸し', id: '242', parent: '24', tasks: []},
-                        {name: '３Ｓ', id: '243', parent: '24', tasks: []},
-                        {name: '事務', id: '244', parent: '24', tasks: []},
-                        {name: 'その他', id: '245', parent: '24', tasks: []},
-                    ];
-            },
-            getSampleTimespans: function() {
-                return [
-                        {
-                            from: new Date(2016, 12, 15, 0, 0, 0),
-                            to: new Date(2016, 12, 15, 8, 0, 0),
-                            name: 'Timespan1'
-                            //priority: undefined,
-                            //classes: [],
-                            //data: undefined
-                        },
-                        {
-                            from: new Date(2016, 12, 16, 8, 0, 0),
-                            to: new Date(2016, 12, 16, 13, 0, 0),
-                            name: 'Timespan2'
-                            //priority: undefined,
-                            //classes: [],
-                            //data: undefined
-                        }
-                    ];
-            }
-        };
-    })
+angular.module('P003PersonalWork')
     .service('TaskDateCheck', ['moment', function TaskDateCheck(moment) {
       var taskList = [];
 
@@ -1261,10 +1492,125 @@ angular.module('angularGanttDemoApp')
           logPrint('TaskDateCheck.getFromToById->', 'undefined');
           return undefined;
         },
+        countTask: function () {
+          return taskList.length;
+        },
         dumpTask: function () {
           angular.forEach(taskList, function (task, i) {
             console.log('TaskDateCheck-' + i + ':(id=' + task.id + ',from=' + task.from.format('HH:mm') + ',to=' + task.to.format('HH:mm') + ')');
           });
+        }
+      };
+    }])
+    .service('TaskRowManager', ['moment', function TaskRowManager(moment) {
+      return {
+          getDummy: function () {
+            return moment(new Date(2016,11,1,0,0,0));
+          },
+          getRowData: function() {
+              return [
+                      // Order is optional. If not specified it will be assigned automatically
+                      {name: '勤務計画', id: '0', sortable: false, drawTask: false, color: '#E0FFFF', tasks: []},
+                      {name: '就業実績', id: '1', sortable: false, drawTask: false, color: '#E0FFFF', tasks: []},
+                      {name: '', id: '2', workmin: undefined, drawTask: false, color: '#E0FFFF', workSummary: true, tasks: []},
+                      {name: '製造所', id: '3', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: '荷卸し', id: '10', parent: '3', workmin: undefined, tasks: []},
+                      {name: '入荷検品', id: '11', parent: '3', workmin: undefined, tasks: []},
+                      {name: '荷役（入荷）', id: '12', parent: '3', workmin: undefined, tasks: []},
+                      {name: '出荷検品', id: '13', parent: '3', tasks: []},
+                      {name: '荷役（出荷）', id: '14', parent: '3', tasks: []},
+                      {name: '本倉庫', id: '4', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: '梱', id: '41', parent: '4', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: '入荷', id: '411', parent: '41', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: '１Ｆ', id: '4111', parent: '411', tasks: []},
+                      {name: '２Ｆ', id: '4112', parent: '411', tasks: []},
+                      {name: '３Ｆ', id: '4113', parent: '411', tasks: []},
+                      {name: '４Ｆ', id: '4114', parent: '411', tasks: []},
+                      {name: '出荷', id: '412', parent: '41', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: '１Ｆ', id: '4121', parent: '412', tasks: []},
+                      {name: '２Ｆ', id: '4122', parent: '412', tasks: []},
+                      {name: '３Ｆ', id: '4123', parent: '412', tasks: []},
+                      {name: '４Ｆ', id: '4124', parent: '412', tasks: []},
+                      {name: '検品・荷造り・積込', id: '413', parent: '41', tasks: []},
+                      {name: '外部倉庫', id: '414', parent: '41', tasks: []},
+                      {name: 'バラ', id: '42', parent: '4', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: '商品', id: '421', parent: '42', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: 'カート（積送）', id: '4211', parent: '421', tasks: []},
+                      {name: 'カート（広域）', id: '4212', parent: '421', tasks: []},
+                      {name: 'カート（コスミリオン）', id: '4213', parent: '421', tasks: []},
+                      {name: '梱包/積付/他', id: '4214', parent: '421', tasks: []},
+                      {name: '欠山', id: '4215', parent: '421', tasks: []},
+                      {name: '欠山（コスミリオン）', id: '4216', parent: '421', tasks: []},
+                      {name: '販促', id: '422', parent: '42', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: '販促バラ（積送）', id: '4221', parent: '422', tasks: []},
+                      {name: '販促バラ（経費）', id: '4222', parent: '422', tasks: []},
+                      {name: '販促バラ（広域）', id: '4223', parent: '422', tasks: []},
+                      {name: '積付/他', id: '4224', parent: '422', tasks: []},
+                      {name: '輸出業務', id: '43', parent: '4', tasks: []},
+                      {name: '他', id: '44', parent: '4', drawTask: false, color: '#FFFAC2', tasks: []},
+                      {name: 'セット加工', id: '441', parent: '44', tasks: []},
+                      {name: '棚卸し', id: '442', parent: '44', tasks: []},
+                      {name: '３Ｓ', id: '443', parent: '44', tasks: []},
+                      {name: '事務', id: '444', parent: '44', tasks: []},
+                      {name: 'その他', id: '445', parent: '44', tasks: []},
+                  ];
+          }
+      };
+
+    }])
+    .service('TaskManager', ['moment', function TaskManager(moment) {
+      return {
+        getTask: function(targetUser) {
+          console.log('targetUser=' + targetUser);
+          return [
+            // Order is optional. If not specified it will be assigned automatically
+            {
+              rowId: '0',
+              task: {
+                id: '500',
+                name: '',
+                color: '#B0B0B0',
+                from: moment(new Date(2016, 11, 15, 9, 0, 0)),
+                to: moment(new Date(2016, 11, 15, 17, 0, 0)),
+                movable: false,
+                planWork: true
+              }
+            },
+            {
+              rowId: '1',
+              task: {
+                id: '600',
+                name: '',
+                color: '#6495ED',
+                from: moment(new Date(2016, 11, 15, 8, 0, 0)),
+                to: moment(new Date(2016, 11, 16, 11, 0, 0)),
+                movable: false,
+                actualWork: true
+              }
+            },
+            {
+              rowId: '10',
+              task: {
+                id: '700',
+                name: '荷卸し',
+                color: '#90EE90',
+                from: moment(new Date(2016, 11, 15, 8, 0, 0)),
+                to: moment(new Date(2016, 11, 15, 9, 0, 0)),
+                workmin: 60
+              }
+            },
+            {
+              rowId: '11',
+              task: {
+                id: '800',
+                name: '入荷検品',
+                color: '#90EE90',
+                from: moment(new Date(2016, 11, 15, 9, 0, 0)),
+                to: moment(new Date(2016, 11, 15, 10, 30, 0)),
+                workmin: 90
+              }
+            }
+          ];
         }
       };
     }])

@@ -2,18 +2,18 @@
 
 /**
  * @ngdoc function
- * @name angularGanttDemoApp.controller:MainCtrl
+ * @name P003PersonalWork.controller:P003Ctrl
  * @description
- * # MainCtrl
- * Controller of the angularGanttDemoApp
+ * # P003Ctrl
+ * Controller of the P003PersonalWork
  */
-angular.module('angularGanttDemoApp')
-    .controller('MainCtrl', [
+angular.module('P003PersonalWork')
+    .controller('P003Ctrl', [
       '$scope', '$timeout', '$log', 'ganttUtils', 'GanttObjectModel',
-      'Sample', 'ganttMouseOffset', 'ganttDebounce', 'moment',
+      'ganttMouseOffset', 'ganttDebounce', 'moment',
       '$modal', '$popover', 'TaskDateCheck', '$alert', 'TaskRowManager',
       'TaskManager', function(
-        $scope, $timeout, $log, utils, ObjectModel, Sample,
+        $scope, $timeout, $log, utils, ObjectModel,
         mouseOffset, debounce, moment,
         $modal, $popover, TaskDateCheck, $alert, TaskRowManager,
         TaskManager
@@ -340,7 +340,7 @@ angular.module('angularGanttDemoApp')
             placement: 'right auto',
             title: (bolRegist ? '作業時間登録' : '作業時間更新'),
             content: 'OK',
-            templateUrl: 'template/P002_registration.html',
+            templateUrl: 'template/P003_registration.html',
             trigger: 'manual',
             container: 'body',
             onShow: function () {
@@ -955,7 +955,7 @@ angular.module('angularGanttDemoApp')
         $scope.patternModal.instance = $modal({
           animation: 'am-fade-and-slide-top',
           title: '基本パターン登録',
-          templateUrl: 'template/P002_pattern.html',
+          templateUrl: 'template/P003_pattern.html',
           show: false
         });
         $scope.patternModal.instance.$promise.then(function () {
@@ -1086,6 +1086,11 @@ angular.module('angularGanttDemoApp')
           areaSize: 3,
           selectedUser: undefined,
           selectedUserName: undefined,
+          selectPlaceHolder: function () {
+            var self = $scope.workerModal;
+            var gt = self.groupType + '';
+            return gt === '1' ? '詳細グループコード' : (gt === '2' ? 'グループコード' : 'ABC分類コード');
+          },
           totalPage: function () {
             var self = $scope.workerModal;
             var total = Math.floor(self.totalItems / self.pagesize);
@@ -1208,6 +1213,7 @@ angular.module('angularGanttDemoApp')
             else {
               self.groups = getABCGroup();
             }
+            self.group = undefined;
           },
           searchUser: function () {
             var self = $scope.workerModal;
@@ -1256,7 +1262,7 @@ angular.module('angularGanttDemoApp')
         $scope.workerModal.instance = $modal({
           animation: 'am-fade-and-slide-top',
           title: '作業者選択',
-          templateUrl: 'template/P002_worker.html',
+          templateUrl: 'template/P003_worker.html',
           show: false
         });
         $scope.workerModal.instance.$promise.then(function () {

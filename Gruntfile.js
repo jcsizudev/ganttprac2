@@ -76,7 +76,10 @@ module.exports = function (grunt) {
       },
       livereload: {
         options: {
-          open: {appName: 'chrome'},
+          open: {
+            target: 'http://localhost:9000/P003.html',
+            appName: 'chrome'
+          },
           //open: {appName: '/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome'},
           //open: true,
           middleware: function (connect) {
@@ -168,7 +171,7 @@ module.exports = function (grunt) {
     // Automatically inject Bower components into the app
     wiredep: {
       app: {
-        src: ['<%= yeoman.app %>/index.html'],
+        src: ['<%= yeoman.app %>/P003.html'],
         ignorePath:  /\.\.\//,
         //exclude: [/bower_components\/bootstrap\/.*\.js/],
         exclude: [/bower_components\/jquery/, /bower_components\/bootstrap\/.*\.js/]
@@ -209,7 +212,7 @@ module.exports = function (grunt) {
     // concat, minify and revision files. Creates configurations in memory so
     // additional tasks can operate on them
     useminPrepare: {
-      html: '<%= yeoman.app %>/index.html',
+      html: '<%= yeoman.app %>/P003.html',
       options: {
         dest: '<%= yeoman.dist %>',
         flow: {

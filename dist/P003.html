@@ -22,7 +22,7 @@
 </style>
 
 </head>
-<body ng-app="angularGanttDemoApp" ng-strict-di>
+<body ng-app="P003PersonalWork" ng-strict-di>
 <!--[if lt IE 7]>
 <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
 <![endif]-->
@@ -35,7 +35,7 @@
   </div>
 </nav>
 
-<div ng-controller="MainCtrl">
+<div ng-controller="P003Ctrl">
     <div class="container-content" ng-show="false">
         <div class="container-fluid">
             <div class="row top-buffer">
@@ -58,7 +58,7 @@
                                   <td><strong>作業日</strong>：2016年12月15日</td>
                                   <td><strong>事業所</strong>：150_石狩LC</td>
                                   <td><strong>グループ</strong>：ＫＣカートＧその他</td>
-                                  <td><strong>作業者</strong>：741047_後藤　悠哉</td>
+                                  <td><strong>作業者</strong>：{{targetUserName}}</td>
                                   <td style="text-align: right;">
                                     <button type="button" class="btn btn-md btn-primary" ng-click="workerModal.instance.show();">
                                       <span class="glyphicon glyphicon-user" aria-hidden="true"></span>

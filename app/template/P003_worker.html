@@ -31,7 +31,7 @@
         <div class="input-group">
           <span class="input-group-addon">グループ</span>
           <ui-select ng-model="workerModal.group" theme="bootstrap">
-              <ui-select-match placeholder="グループコード">
+              <ui-select-match placeholder="{{workerModal.selectPlaceHolder()}}">
                   <span ng-bind="$select.selected.name"></span>
               </ui-select-match>
               <ui-select-choices repeat="item in (workerModal.groups | filter: $select.search) track by item.id">

@@ -2,13 +2,13 @@
 
 /**
  * @ngdoc overview
- * @name angularGanttDemoApp
+ * @name P003PersonalWork
  * @description
- * # angularGanttDemoApp
+ * # P003PersonalWork
  *
  * Main module of the application.
  */
-angular.module('angularGanttDemoApp', [
+angular.module('P003PersonalWork', [
     'gantt', // angular-gantt.
     'gantt.sortable',
     'gantt.movable',
