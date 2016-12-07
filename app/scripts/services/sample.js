@@ -300,6 +300,9 @@ angular.module('angularGanttDemoApp')
           logPrint('TaskDateCheck.getFromToById->', 'undefined');
           return undefined;
         },
+        countTask: function () {
+          return taskList.length;
+        },
         dumpTask: function () {
           angular.forEach(taskList, function (task, i) {
             console.log('TaskDateCheck-' + i + ':(id=' + task.id + ',from=' + task.from.format('HH:mm') + ',to=' + task.to.format('HH:mm') + ')');
@@ -364,12 +367,6 @@ angular.module('angularGanttDemoApp')
 
     }])
     .service('TaskManager', ['moment', function TaskManager(moment) {
-      var x = 0;
-      var newTaskId = function (id) {
-        var ret = (id + x) + '';
-        x += 1;
-        return ret;
-      };
       return {
         getTask: function(targetUser) {
           console.log('targetUser=' + targetUser);
@@ -378,7 +375,7 @@ angular.module('angularGanttDemoApp')
             {
               rowId: '0',
               task: {
-                id: newTaskId(500),
+                id: '500',
                 name: '',
                 color: '#B0B0B0',
                 from: moment(new Date(2016, 11, 15, 9, 0, 0)),
@@ -390,7 +387,7 @@ angular.module('angularGanttDemoApp')
             {
               rowId: '1',
               task: {
-                id: newTaskId(600),
+                id: '600',
                 name: '',
                 color: '#6495ED',
                 from: moment(new Date(2016, 11, 15, 8, 0, 0)),
@@ -402,7 +399,7 @@ angular.module('angularGanttDemoApp')
             {
               rowId: '10',
               task: {
-                id: newTaskId(700),
+                id: '700',
                 name: '荷卸し',
                 color: '#90EE90',
                 from: moment(new Date(2016, 11, 15, 8, 0, 0)),
@@ -413,7 +410,7 @@ angular.module('angularGanttDemoApp')
             {
               rowId: '11',
               task: {
-                id: newTaskId(800),
+                id: '800',
                 name: '入荷検品',
                 color: '#90EE90',
                 from: moment(new Date(2016, 11, 15, 9, 0, 0)),

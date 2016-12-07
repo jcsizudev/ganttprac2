@@ -97,33 +97,37 @@ angular.module('angularGanttDemoApp')
         var clearTask = function () {
           angular.forEach($scope.data, function (row) {
             row.tasks = [];
-            //row.workmin = undefined;
+            row.workmin = undefined;
           });
-          console.log($scope.$applyAsync());
         };
-        var loadTask = function () {
+
+        var loadTask = function (taskList, cnt) {
+          if (cnt > 5) {
+            console.log('retry over!');
+          }
+          else if (TaskDateCheck.countTask() === 0) {
+            console.log('load=' + cnt);
+            angular.forEach($scope.data, function (row) {
+              angular.forEach(taskList, function (task) {
+                if (task.rowId === row.id) {
+                  // タスクを対象行に追加
+                  row.tasks.push(angular.copy(task.task));
+                }
+              });
+            });
+          }
+          else {
+            console.log('retry=' + cnt);
+            $timeout(function () {
+              loadTask(taskList, (cnt + 1));
+            }, 200);
+          }
+        };
+
+        var ReloadTasks = function () {
           var taskList = TaskManager.getTask($scope.targetUser);
           clearTask();
-          angular.forEach($scope.data, function (row) {
-            angular.forEach(taskList, function (task) {
-              if (task.rowId === row.id) {
-                // タスクを対象行に追加
-                row.tasks.push(angular.copy(task.task));
-                /*
-                if (task.workmin !== undefined) {
-                  row.workmin = task.workmin;
-                  if ($scope.summaryRow.workmin === undefined) {
-                    $scope.summaryRow.workmin = task.workmin;
-                  }
-                  else {
-                    $scope.summaryRow.workmin += task.workmin;
-                  }
-                }
-                */
-              }
-            });
-          });
-          $scope.$applyAsync();
+          loadTask(taskList, 0);
         };
 
         var deleteTask = function (row, task) {
@@ -503,6 +507,12 @@ angular.module('angularGanttDemoApp')
           }
         };
 
+        var taskRemove = function (eventName, task) {
+          $log.info('[Event] ' + eventName + ': ' + task.model.name);
+          console.log(task.model.id);
+          TaskDateCheck.delTask(task.model.id);
+        };
+
         // Event handler
         var logRowEvent = function(eventName, row) {
             $log.info('[Event] ' + eventName + ': ' + row.model.name);
@@ -650,7 +660,8 @@ angular.module('angularGanttDemoApp')
                     });
                     */
                     api.tasks.on.rowChange($scope, addEventName('tasks.on.rowChange', logTaskEvent));
-                    api.tasks.on.remove($scope, addEventName('tasks.on.remove', logTaskEvent));
+                    //api.tasks.on.remove($scope, addEventName('tasks.on.remove', logTaskEvent));
+                    api.tasks.on.remove($scope, addEventName('tasks.on.remove', taskRemove));
 
                     if (api.tasks.on.moveBegin) {
                         //api.tasks.on.moveBegin($scope, addEventName('tasks.on.moveBegin', logTaskEvent));
@@ -1233,7 +1244,7 @@ angular.module('angularGanttDemoApp')
 
             $scope.targetUser = self.selectedUser;  // 作業者
             $scope.targetUserName = self.selectedUser + '_' + self.selectedUserName;  // 作業者名称
-            loadTask();
+            ReloadTasks();
 
             self.cancel();
           }
